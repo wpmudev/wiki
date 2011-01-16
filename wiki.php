@@ -76,7 +76,7 @@ class Wiki {
 	
 	add_filter('post_type_link', array(&$this, 'post_type_link'), 10, 3);
 	add_filter('name_save_pre', array(&$this, 'name_save'));
-
+	add_filter('the_content', array(&$this, 'the_content'));
 	
 	// White list the options to make sure non super admin can save wiki options 
 	// add_filter('whitelist_options', array(&$this, 'whitelist_options'));
@@ -196,6 +196,58 @@ class Wiki {
 	$wp_rewrite->add_permastruct('incsub_wiki', $wiki_structure, false);
     }
     
+    function the_content($content) {
+	global $post;
+	
+	if ($post->post_type != 'incsub_wiki') {
+	    return $content;
+	}
+	
+	$top = "";
+	
+	$crumbs = array();
+	foreach($post->ancestors as $parent_pid) {
+	    $parent_post = get_post($parent_pid);
+	    
+	    $crumbs[] = '<a href="'.get_permalink($parent_pid).'" class="incsub_wiki_crumbs">'.$parent_post->post_title.'</a>';
+	}
+	
+	sort($crumbs);
+	
+	$top .= join(get_option("incsub_meta_seperator", " > "), $crumbs);
+	
+	$children = get_children('post_parent='.$post->ID.'&post_type=incsub_wiki');
+	
+	$crumbs = array();
+	foreach($children as $child) {
+	    $crumbs[] = '<a href="'.get_permalink($child->ID).'" class="incsub_wiki_crumbs">'.$child->post_title.'</a>';
+	}
+	
+	$bottom = "<h3>".__('Sub Wikis', $this->translation_domain) . "</h3> <ul><li>";
+	
+	$bottom .= join("</li><li>", $crumbs);
+	
+	if (count($crumbs) == 0) {
+	    $bottom = "";
+	} else {
+	    $bottom .= "</li></ul>";
+	}
+	
+	$revisions = wp_get_post_revisions($post->ID);
+	
+	if (current_user_can('edit_wiki') || !is_user_logged_in()) {
+	    $bottom .= '<div class="incsub_new_wiki">';
+	    if (is_array($revisions) && count($revisions) > 0) {
+		$revision = array_shift($revisions);
+		$bottom .= '<a href="'.wp_nonce_url(add_query_arg(array('revision' => $revision->ID), admin_url('revision.php')), "restore-post_$post->ID|$revision->ID" ).'">'.__('Revisions', $this->translation_domain).'</a> &nbsp;';
+	    }
+	    $bottom .= '<a href="'.admin_url('post-new.php?post_type=incsub_wiki').'">'.__('Create new Wiki', $this->translation_domain).'</a>'.
+	    '</div>';
+	}
+	
+	return '<div class="incsub_wiki-top entry-utility">'.$top.'</div> '.$content.' <div class="incsub_wiki-bottom entry-utility">'.$bottom.'</div>';
+    }
+    
     function meta_boxes() {
 	add_meta_box('incsub-wiki-privileges', __('Wiki Privileges', $this->translation_domain), array(&$this, 'privileges_meta_box'), 'incsub_wiki', 'side');
 	add_meta_box('incsub-wiki-notifications', __('Wiki E-mail Notifications', $this->translation_domain), array(&$this, 'notifications_meta_box'), 'incsub_wiki', 'side');
@@ -208,8 +260,7 @@ class Wiki {
 	    '%wiki%',
 	);
 	
-	if ($post->post_type == 'incsub_wiki' && '' != $permalink &&
-	    !in_array($post->post_status, array('draft', 'pending', 'auto-draft')) ) {
+	if ($post->post_type == 'incsub_wiki' && '' != $permalink) {
 	    
 	    $ptype = get_post_type_object($post->post_type);
 	    
@@ -226,7 +277,7 @@ class Wiki {
 	    }
 	    
 	    $rewritereplace = array(
-	    	$post->post_name
+	    	($post->post_name == "")?$post->id:$post->post_name
 	    );
 	    $permalink = str_replace($rewritecode, $rewritereplace, $permalink);
 	} else {
@@ -269,7 +320,7 @@ class Wiki {
 	$meta = get_post_custom($post->ID);
 	
 	$current_privileges = unserialize($meta["incsub_wiki_privileges"][0]);
-	$privileges = array('anyone' => 'Anyone', 'network' => 'Network users', 'site' => 'Site users', 'edit_posts' => 'Users who can edit posts in this site');
+	$privileges = array(/*'anyone' => 'Anyone', 'network' => 'Network users',*/ 'site' => 'Site users', 'edit_posts' => 'Users who can edit posts in this site');
 	?>
 	<input type="hidden" name="incsub_wiki_privileges_meta" value="1" />
 	<div class="alignleft">
@@ -290,7 +341,7 @@ class Wiki {
 	?>
 	<input type="hidden" name="incsub_wiki_notifications_meta" value="1" />
 	<div class="alignleft">
-	    <label><input type="checkbox" name="incsub_wiki_email_notification" value="enabled" <?php print ($meta["incsub_wiki_email_notification"][0] == "")?'checked="checked"':''; ?> /> <?php _e('Enable e-mail notifications', $this->translation_domain); ?></label>
+	    <label><input type="checkbox" name="incsub_wiki_email_notification" value="enabled" <?php print ($meta["incsub_wiki_email_notification"][0] == "")?'':'checked="checked"'; ?> /> <?php _e('Enable e-mail notifications', $this->translation_domain); ?></label>
 	</div>
 	<div class="clear"></div>
 	<?php
