@@ -33,6 +33,8 @@ class Wiki {
      */
     var $translation_domain = 'wiki';
     
+    var $db_prefix = '';
+    
     /**
      * @var		array	$_options		Consolidated options
      */
@@ -57,6 +59,8 @@ class Wiki {
      * Plugin register actions, filters and hooks. 
      */
     function Wiki() {
+	global $wpdb;
+	
 	// Activation deactivation hooks
 	register_activation_hook(__FILE__, array(&$this, 'install'));
 	register_deactivation_hook(__FILE__, array(&$this, 'uninstall'));
@@ -73,8 +77,9 @@ class Wiki {
 	
     	add_filter('admin_menu', array(&$this, 'admin_menu'));
 	
-	add_action('option_rewrite_rules', array(&$this, 'check_rewrite_rules') );
-	add_action('widgets_init', array(&$this, 'widgets_init') );
+	// add_action('option_rewrite_rules', array(&$this, 'check_rewrite_rules') );
+	add_action('widgets_init', array(&$this, 'widgets_init'));
+	add_action('pre_post_update', array(&$this, 'send_notifications'), 50, 1);
 	
 	add_filter('post_type_link', array(&$this, 'post_type_link'), 10, 3);
 	add_filter('name_save_pre', array(&$this, 'name_save'));
@@ -82,6 +87,12 @@ class Wiki {
 	
 	// White list the options to make sure non super admin can save wiki options 
 	// add_filter('whitelist_options', array(&$this, 'whitelist_options'));
+	
+	if ( !empty($wpdb->base_prefix) ) {
+	    $this->db_prefix = $wpdb->base_prefix;
+	} else {
+	    $this->db_prefix = $wpdb->prefix;
+	}
 	
 	$this->_options['default'] = get_option('wiki_default', array( 
         ));
@@ -110,8 +121,17 @@ class Wiki {
 	if ( ! empty($wpdb->collate) )
 	    $charset_collate .= " COLLATE $wpdb->collate";
 	
-	// Setup the chat log table
-	$sql_main = "";
+	// Setup the subscription table
+	$sql_main =
+	"CREATE TABLE `" . $this->db_prefix . "wiki_subscriptions` (
+	    `ID` bigint(20) unsigned NOT NULL auto_increment,
+	    `blog_id` bigint(20) NOT NULL,
+	    `wiki_id` bigint(20) NOT NULL,
+	    `user_id` bigint(20),
+	    `email` VARCHAR(255),
+	    PRIMARY KEY  (`ID`)
+	) ENGINE=MyISAM;";
+	
 	dbDelta($sql_main);
 	
 	// Default chat options
@@ -149,7 +169,7 @@ class Wiki {
      * @see		http://adambrown.info/p/wp_hooks/hook/init
      */
     function init() {
-	global $wp_rewrite;
+	global $wpdb, $wp_rewrite, $current_user, $blog_id;
 	
 	if (preg_match('/mu\-plugin/', PLUGINDIR) > 0) {
 	    load_muplugin_textdomain($this->translation_domain, dirname(plugin_basename(__FILE__)).'/languages');
@@ -196,6 +216,34 @@ class Wiki {
 	
 	$wp_rewrite->add_rewrite_tag("%wiki%", '(.+?)', "incsub_wiki=");
 	$wp_rewrite->add_permastruct('incsub_wiki', $wiki_structure, false);
+	
+	if (isset($_REQUEST['subscribe']) && wp_verify_nonce($_REQUEST['_wpnonce'], "wiki-subscribe-wiki_{$_REQUEST['post_id']}")) {
+	    if (isset($_REQUEST['email'])) {
+		if ($wpdb->insert("{$this->db_prefix}wiki_subscriptions",
+		    array('blog_id' => $blog_id,
+		    'wiki_id' => $_REQUEST['post_id'],
+		    'email' => $_REQUEST['email']))) {
+		    setcookie('incsub_wiki_email', $_REQUEST['email'], time()+3600*24*365, '/');
+		    wp_redirect(get_permalink($_REQUEST['post_id']));
+		    exit();
+		}
+	    } else if (is_user_logged_in()){
+		if ($wpdb->insert("{$this->db_prefix}wiki_subscriptions",
+		    array('blog_id' => $blog_id,
+		    'wiki_id' => $_REQUEST['post_id'],
+		    'user_id' => $current_user->ID))) {
+		    wp_redirect(get_permalink($_REQUEST['post_id']));
+		    exit();    
+		}
+	    }
+	}
+	
+	if (isset($_GET['action']) && $_GET['action'] == 'cancel-wiki-subscription') {
+	    if ($wpdb->query("DELETE FROM {$this->db_prefix}wiki_subscriptions WHERE ID = ".intval($_GET['sid']).";")) {
+		wp_redirect(get_option('siteurl'));
+		exit();  
+	    }
+	}
     }
     
     /**
@@ -244,8 +292,8 @@ class Wiki {
 	
 	$revisions = wp_get_post_revisions($post->ID);
 	
-	if (current_user_can('edit_wiki') || !is_user_logged_in()) {
-	    $bottom .= '<div class="incsub_new_wiki">';
+	if (current_user_can('edit_wiki')) {
+	    $bottom .= '<div class="incsub_wiki-meta">';
 	    if (is_array($revisions) && count($revisions) > 0) {
 		$revision = array_shift($revisions);
 		$bottom .= '<a href="'.wp_nonce_url(add_query_arg(array('revision' => $revision->ID), admin_url('revision.php')), "restore-post_$post->ID|$revision->ID" ).'">'.__('Revisions', $this->translation_domain).'</a> &nbsp;';
@@ -254,7 +302,43 @@ class Wiki {
 	    '</div>';
 	}
 	
+	$notification_meta = get_post_custom($post->ID, array('incsub_wiki_email_notification' => 'enabled'));
+	
+	if ($notification_meta['incsub_wiki_email_notification'][0] == 'enabled' && !$this->is_subscribed()) {
+	    if (is_user_logged_in()) {
+		    $bottom .= '<div class="incsub_wiki-subscribe"><a href="'.wp_nonce_url(add_query_arg(array('post_id' => $post->ID, 'subscribe' => 1)), "wiki-subscribe-wiki_$post->ID" ).'">'.__('Notify me of changes', $this->translation_domain).'</a></div>';
+	    } else {
+		if (!empty($_COOKIE['incsub_wiki_email'])) {
+		    $user_email = $_COOKIE['incsub_wiki_email'];
+		} else {
+		    $user_email = "";
+		}
+		$bottom .= '<div class="incsub_wiki-subscribe">'.
+		'<form action="" method="post">'.
+		'<label>'.__('E-mail', $this->translation_domain).': <input type="text" name="email" id="email" value="'.$user_email.'" /></label> &nbsp;'.
+		'<input type="hidden" name="post_id" id="post_id" value="'.$post->ID.'" />'.
+		'<input type="submit" name="subscribe" id="subscribe" value="'.__('Notify me of changes', $this->translation_domain).'" />'.
+		'<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-subscribe-wiki_$post->ID").'" />'.
+		'</form>'.
+		'</div>';
+	    }
+	}
+	
 	return '<div class="incsub_wiki-top entry-utility">'.$top.'</div> '.$content.' <div class="incsub_wiki-bottom entry-utility">'.$bottom.'</div>';
+    }
+    
+    function is_subscribed() {
+	global $wpdb, $current_user, $post;
+	
+	if (is_user_logged_in()) {
+	    if ($wpdb->get_var("SELECT ID FROM {$this->db_prefix}wiki_subscriptions WHERE wiki_id = {$post->ID} AND user_id = {$current_user->ID}") > 0) {
+		return true;
+	    }
+	} else if ($wpdb->get_var("SELECT ID FROM {$this->db_prefix}wiki_subscriptions WHERE wiki_id = {$post->ID} AND email = '{$_COOKIE['incsub_wiki_email']}'") > 0) {
+	    return true;
+	}
+	
+	return false;
     }
     
     function meta_boxes() {
@@ -304,32 +388,13 @@ class Wiki {
 	return $post_name;
     }
     
-    function check_rewrite_rules($value) {
-	$settings = get_option('mp_settings');
-	
-	//prevent an infinite loop
-	if ( ! post_type_exists( 'incsub_wiki' ) )
-	    return;
-	    
-	$array_key = '(wiki)/(\d*)$';
-  	
-	if ( !array_key_exists($array_key, $value) ) {
-	    $this->flush_rewrite();
-	}
-    }
-    
-    function flush_rewrite() {
-	global $wp_rewrite;
-	$wp_rewrite->flush_rules();
-    }
-    
     function privileges_meta_box() {
 	global $post;
 	$settings = get_option('incsub_wiki_settings');
 	$meta = get_post_custom($post->ID);
 	
 	$current_privileges = unserialize($meta["incsub_wiki_privileges"][0]);
-	$privileges = array(/*'anyone' => 'Anyone', 'network' => 'Network users',*/ 'site' => 'Site users', 'edit_posts' => 'Users who can edit posts in this site');
+	$privileges = array(/*'anyone' => 'Anyone', 'network' => 'Network users', 'site' => 'Site users', */'edit_posts' => 'Users who can edit posts in this site');
 	?>
 	<input type="hidden" name="incsub_wiki_privileges_meta" value="1" />
 	<div class="alignleft">
@@ -346,7 +411,9 @@ class Wiki {
 	global $post;
 	$settings = get_option('incsub_wiki_settings');
 	$meta = get_post_custom($post->ID);
-	
+	if ($meta == array()) {
+	    $meta = array('incsub_wiki_email_notification' => array('enabled'));
+	}
 	?>
 	<input type="hidden" name="incsub_wiki_notifications_meta" value="1" />
 	<div class="alignleft">
@@ -395,7 +462,7 @@ class Wiki {
 	<?php echo $before_title . __($options['title'], $this->translation_domain) . $after_title; ?>
 	<?php
 	    $wiki_tree = array();
-	    $wiki_posts = get_posts('post_type=incsub_wiki');
+	    $wiki_posts = get_posts('post_type=incsub_wiki&order_by=menu_order');
 	    
 	    // 1st pass
 	    foreach ($wiki_posts as $wiki_post) {
@@ -423,7 +490,11 @@ class Wiki {
 			if (!isset($wiki_tree[$wiki_post->post_parent])) {
 			    $n = get_post($wiki_post->post_parent);
 			    if ($n->post_parent != 0) {
+				$wiki_tree[$n->post_parent][$wiki_post->post_parent] = array($n);
 				$wiki_tree[$n->post_parent][$wiki_post->post_parent][$wiki_post->ID] = array($wiki_post);
+			    } else {
+				$wiki_tree[$wiki_post->post_parent] = array($n);
+				$wiki_tree[$wiki_post->post_parent][$wiki_post->ID] = array($wiki_post);
 			    }
 			}
 		    }
@@ -447,6 +518,7 @@ class Wiki {
 				<ul>
 			    <?php
 				    foreach ($nnode as $nnnode) {
+					// print_r($nnnode);
 					$leaf = array_shift($nnnode);
 					?>
 					    <li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a></li>
@@ -497,8 +569,8 @@ class Wiki {
             </label>
 	    <label for="wiki-hierarchical" style="line-height:35px;display:block;"><?php _e('Only top level', $this->translation_domain); ?>:<br />
                 <select name="wiki-hierarchical" id="wiki-hierarchical" >
-		    <option value="yes" <?php if ($options['hierarchical'] == 'yes'){ echo 'selected="selected"'; } ?> ><?php _e('Yes', $this->translation_domain); ?></option>
-		    <option value="no" <?php if ($options['hierarchical'] == 'no'){ echo 'selected="selected"'; } ?> ><?php _e('No', $this->translation_domain); ?></option>
+		    <option value="no" <?php if ($options['hierarchical'] == 'no'){ echo 'selected="selected"'; } ?> ><?php _e('Yes', $this->translation_domain); ?></option>
+		    <option value="yes" <?php if ($options['hierarchical'] == 'yes'){ echo 'selected="selected"'; } ?> ><?php _e('No', $this->translation_domain); ?></option>
                 </select>
             </label>
 	    <input type="hidden" name="wiki-submit" id="wiki-submit" value="1" />
@@ -509,6 +581,113 @@ class Wiki {
     function widgets_init() {
 	register_sidebar_widget(array(__('Wiki', $this->translation_domain), 'widgets'), array(&$this, 'widget'));
 	register_widget_control(array(__('Wiki', $this->translation_domain), 'widgets'), array(&$this, 'widget_control'));
+    }
+    
+    function send_notifications($post_id) {
+	global $wpdb;
+	// We do autosaves manually with wp_create_post_autosave()
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
+            return;
+	
+        if ( !$post = get_post( $post_id, ARRAY_A ) )
+            return;
+	
+        if ( $post['post_type'] != 'incsub_wiki' || !post_type_supports($post['post_type'], 'revisions') )
+            return;
+	
+        // all revisions and (possibly) one autosave
+        $revisions = wp_get_post_revisions($post_id, array( 'order' => 'ASC' ));
+	
+        $revision = array_pop($revisions);
+	
+	$post = get_post($post_id);
+	
+	$cancel_url = get_option('siteurl') . '?action=cancel-wiki-subscription&sid=';
+	$admin_email = get_option('admin_email');
+	$post_title = $post->post_title;
+	$post_content = $post->post_content;
+	$post_url = get_permalink($post_id);
+	
+	$revisions = wp_get_post_revisions($post->ID);
+	$revision = array_shift($revisions);
+	
+	$revert_url = wp_nonce_url(add_query_arg(array('revision' => $revision->ID), admin_url('revision.php')), "restore-post_$post->ID|$revision->ID" );
+	
+	//cleanup title
+	$blog_name = get_option('blogname');
+	$post_title = strip_tags($post_title);
+	//cleanup content
+	$post_content = strip_tags($post_content);
+	//get excerpt
+	$post_excerpt = $post_content;
+	if (strlen($post_excerpt) > 255) {
+	    $post_excerpt = substr($post_excerpt,0,252) . '...';
+	}
+	
+	$wiki_notification_content = array();
+	$wiki_notification_content['user'] = "Dear Subscriber,
+
+POST_TITLE was changed
+
+You can read the Wiki page in full here: POST_URL
+
+EXCERPT
+
+Thanks,
+BLOGNAME
+
+Cancel subscription: CANCEL_URL";
+
+	$wiki_notification_content['author'] = "Dear Author,
+
+POST_TITLE was changed
+
+You can read the Wiki page in full here: POST_URL
+You can revert the changes: REVERT_URL
+
+EXCERPT
+
+Thanks,
+BLOGNAME
+
+Cancel subscription: CANCEL_URL";
+
+	//format notification text
+	foreach ($wiki_notification_content as $key => $content) {
+	    $wiki_notification_content[$key] = str_replace("BLOGNAME",$blog_name,$wiki_notification_content[$key]);
+	    $wiki_notification_content[$key] = str_replace("POST_TITLE",$post_title,$wiki_notification_content[$key]);
+	    $wiki_notification_content[$key] = str_replace("EXCERPT",$post_excerpt,$wiki_notification_content[$key]);
+	    $wiki_notification_content[$key] = str_replace("POST_URL",$post_url,$wiki_notification_content[$key]);
+	    $wiki_notification_content[$key] = str_replace("REVERT_URL",$revert_url,$wiki_notification_content[$key]);
+	    $wiki_notification_content[$key] = str_replace("\'","'",$wiki_notification_content[$key]);
+	}
+	
+	$query = "SELECT * FROM " . $this->db_prefix . "wiki_subscriptions WHERE wiki_id = {$post->ID}";
+	$subscription_emails = $wpdb->get_results( $query, ARRAY_A );
+	
+	if (count($subscription_emails) > 0){
+	    foreach ($subscription_emails as $subscription_email){
+		$loop_notification_content = $wiki_notification_content['user'];
+		
+		$loop_notification_content = $wiki_notification_content['user'];
+		
+		if ($subscription_email['user_id'] > 0) {
+		    if ($subscription_email['user_id'] == $post->post_author) {
+			$loop_notification_content = $wiki_notification_content['author'];
+		    }
+		    $user = get_userdata($subscription_email['user_id']);
+		    $subscription_to = $user->user_email;
+		} else {
+		    $subscription_to = $subscription_email['email'];
+		}
+		
+		$loop_notification_content = str_replace("CANCEL_URL",$cancel_url . $subscription_email['ID'],$loop_notification_content);
+		$subject_content = $blog_name . ': ' . __('Wiki Page Changes', $this->translation_domain);
+		$from_email = $admin_email;
+		$message_headers = "MIME-Version: 1.0\n" . "From: " . $blog_name .  " <{$from_email}>\n" . "Content-Type: text/plain; charset=\"" . get_option('blog_charset') . "\"\n";
+		wp_mail($subscription_to, $subject_content, $loop_notification_content, $message_headers);
+	    }
+	}
     }
 }
 
