@@ -4,7 +4,7 @@
  Plugin URI: http://premium.wpmudev.org/project/wiki
  Description: Add a wiki to your blog
  Author: S H Mohanjith (Incsub)
- WDP ID: 159
+ WDP ID:
  Version: 1.0.0a2
  Author URI: http://premium.wpmudev.org
 */
@@ -80,6 +80,8 @@ class Wiki {
 	add_action('widgets_init', array(&$this, 'widgets_init'));
 	add_action('pre_post_update', array(&$this, 'send_notifications'), 50, 1);
 	
+	add_action('dbx_post_advanced', array(&$this, 'guardian'));
+	
 	add_filter('post_type_link', array(&$this, 'post_type_link'), 10, 3);
 	add_filter('name_save_pre', array(&$this, 'name_save'));
 	add_filter('the_content', array(&$this, 'the_content'));
@@ -95,6 +97,40 @@ class Wiki {
 	
 	$this->_options['default'] = get_option('wiki_default', array( 
         ));
+    }
+    
+    function guardian() {
+	if (!$this->check_permission()) {
+	    wp_die(__('You are not allowed to edit this wiki', $this->translation_domain));
+	}
+    }
+    
+    function check_permission() {
+	global $post, $current_user, $blog_id;
+	
+	if ($post && $post->post_type == 'incsub_wiki') {
+	    if (in_array('administrator', $current_user->roles)) {
+		return true;
+	    }
+	    
+	    $meta = get_post_custom($post->ID);
+	    $current_privileges = unserialize($meta["incsub_wiki_privileges"][0]);
+	    
+	    if (in_array('edit_posts', $current_privileges) && current_user_can('edit_post', $post->ID)) {
+		return true;
+	    }
+	    
+	    if (in_array('site', $current_privileges) && current_user_can_for_blog($blog_id, 'edit_wiki')) {
+		return true;
+	    }
+	    
+	    if (in_array('network', $current_privileges)) {
+		return true;
+	    }
+	    
+	    return false;
+	}
+	return true;
     }
     
     /**
@@ -132,6 +168,30 @@ class Wiki {
 	) ENGINE=MyISAM;";
 	
 	dbDelta($sql_main);
+	
+	$ro = new WP_Roles();
+        foreach ($ro->role_objects as $role) {
+            switch ($role->name) {
+		case 'administrator':
+		    $role->add_cap('delete_others_wiki', true);
+		    $role->add_cap('delete_published_wiki', true);
+		case 'editor':
+		    $role->add_cap('publish_wiki', true);
+		    $role->add_cap('delete_private_wiki', true);
+		case 'author':
+		    $role->add_cap('edit_private_wiki', true);
+		    $role->add_cap('read_private_wiki', true);
+		    $role->add_cap('delete_wiki', true);
+		case 'contributor':
+		    $role->add_cap('edit_others_wiki', true);
+		case 'subscriber':
+                    $role->add_cap('edit_wiki', true);
+		default:
+		    $role->add_cap('edit_published_wiki', true);
+		    $role->add_cap('read_wiki', true);
+		    break;
+            }
+        }
 	
 	// Default chat options
 	$this->_options = array(
@@ -200,7 +260,7 @@ class Wiki {
 		'publicly_queryable' => true,
 		'capabilities' => array(
 		    'edit_wiki', 'read_wiki', 'delete_wiki', 'edit_others_wiki', 'publish_wiki', 'read_private_wiki',
-		    'read', 'delete_wiki', 'delete_private_wiki', 'delete_published_wiki', 'delete_others_wiki',
+		    'delete_private_wiki', 'delete_published_wiki', 'delete_others_wiki',
 		    'edit_private_wiki', 'edit_published_wiki'),
 		'hierarchical' => true,
 		'map_meta_cap' => true,
@@ -290,7 +350,7 @@ class Wiki {
 	
 	$revisions = wp_get_post_revisions($post->ID);
 	
-	if (current_user_can('edit_wiki')) {
+	if ($this->check_permission()) {
 	    $bottom .= '<div class="incsub_wiki-meta">';
 	    if (is_array($revisions) && count($revisions) > 0) {
 		$revision = array_shift($revisions);
@@ -340,8 +400,12 @@ class Wiki {
     }
     
     function meta_boxes() {
-	add_meta_box('incsub-wiki-privileges', __('Wiki Privileges', $this->translation_domain), array(&$this, 'privileges_meta_box'), 'incsub_wiki', 'side');
-	add_meta_box('incsub-wiki-notifications', __('Wiki E-mail Notifications', $this->translation_domain), array(&$this, 'notifications_meta_box'), 'incsub_wiki', 'side');
+	global $post, $current_user;
+	
+	if ($post->post_author == $current_user->ID || current_user_can('edit_post', $post->ID)) {
+	    add_meta_box('incsub-wiki-privileges', __('Wiki Privileges', $this->translation_domain), array(&$this, 'privileges_meta_box'), 'incsub_wiki', 'side');
+	    add_meta_box('incsub-wiki-notifications', __('Wiki E-mail Notifications', $this->translation_domain), array(&$this, 'notifications_meta_box'), 'incsub_wiki', 'side');
+	}
     }
     
     function post_type_link($permalink, $post_id, $leavename) {
@@ -395,7 +459,7 @@ class Wiki {
 	if (!is_array($current_privileges)) {
 	    $current_privileges = array();
 	}
-	$privileges = array(/*'anyone' => 'Anyone', 'network' => 'Network users', 'site' => 'Site users', */'edit_posts' => 'Users who can edit posts in this site');
+	$privileges = array(/*'anyone' => 'Anyone', */ 'network' => 'Network users', 'site' => 'Site users', 'edit_posts' => 'Users who can edit posts in this site');
 	?>
 	<input type="hidden" name="incsub_wiki_privileges_meta" value="1" />
 	<div class="alignleft">
