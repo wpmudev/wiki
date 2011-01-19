@@ -5,7 +5,7 @@
  Description: Add a wiki to your blog
  Author: S H Mohanjith (Incsub)
  WDP ID: 159
- Version: 1.0.0
+ Version: 1.0.0a2
  Author URI: http://premium.wpmudev.org
 */
 /**
@@ -18,7 +18,7 @@ global $wiki;
  * 
  * Add a wiki to your blog
  * 
- * @since 1.0.0
+ * @since 1.0.0a2
  * @author S H Mohanjith <moha@mohanjith.net>
  */
 class Wiki {
@@ -66,7 +66,7 @@ class Wiki {
 	register_deactivation_hook(__FILE__, array(&$this, 'uninstall'));
 	
         // Actions
-	add_action('init', array(&$this, 'init'));
+	add_action('init', array(&$this, 'init'), 0);
 	add_action('wp_head', array(&$this, 'output_css'));
     	
 	add_action('admin_print_styles-settings_page_wiki', array(&$this, 'admin_styles'));
@@ -77,7 +77,6 @@ class Wiki {
 	
     	add_filter('admin_menu', array(&$this, 'admin_menu'));
 	
-	// add_action('option_rewrite_rules', array(&$this, 'check_rewrite_rules') );
 	add_action('widgets_init', array(&$this, 'widgets_init'));
 	add_action('pre_post_update', array(&$this, 'send_notifications'), 50, 1);
 	
@@ -147,7 +146,7 @@ class Wiki {
      * @see		http://codex.wordpress.org/Adding_Administration_Menus
      */
     function admin_menu() {
-	add_options_page(__('Wiki Plugin Options', $this->translation_domain), __('Chat', $this->translation_domain), 8, 'chat', array(&$this, 'plugin_options'));
+	// Nothing to do
     }
     
     /**
@@ -199,7 +198,6 @@ class Wiki {
 		'public' => true,
 		'show_ui' => true,
 		'publicly_queryable' => true,
-		'capability_type' => 'wiki',
 		'capabilities' => array(
 		    'edit_wiki', 'read_wiki', 'delete_wiki', 'edit_others_wiki', 'publish_wiki', 'read_private_wiki',
 		    'read', 'delete_wiki', 'delete_private_wiki', 'delete_published_wiki', 'delete_others_wiki',
@@ -394,6 +392,9 @@ class Wiki {
 	$meta = get_post_custom($post->ID);
 	
 	$current_privileges = unserialize($meta["incsub_wiki_privileges"][0]);
+	if (!is_array($current_privileges)) {
+	    $current_privileges = array();
+	}
 	$privileges = array(/*'anyone' => 'Anyone', 'network' => 'Network users', 'site' => 'Site users', */'edit_posts' => 'Users who can edit posts in this site');
 	?>
 	<input type="hidden" name="incsub_wiki_privileges_meta" value="1" />
@@ -447,140 +448,8 @@ class Wiki {
 	}
     }
     
-    function widget($args) {
-	global $wpdb, $current_site, $post, $wiki_tree;
-	extract($args);
-	
-	$defaults = array('hierarchical' => 'no', 'title' => __('Wiki', $this->translation_domain));
-	$options = (array) get_option('wiki_widget_options', $defaults);
-	
-	foreach ( $defaults as $key => $value )
-	    if ( !isset($options[$key]) )
-		$options[$key] = $defaults[$key];
-	?>
-	<?php echo $before_widget; ?>
-	<?php echo $before_title . __($options['title'], $this->translation_domain) . $after_title; ?>
-	<?php
-	    $wiki_tree = array();
-	    $wiki_posts = get_posts('post_type=incsub_wiki&order_by=menu_order');
-	    
-	    // 1st pass
-	    foreach ($wiki_posts as $wiki_post) {
-		if ($wiki_post->post_parent == 0) {
-		    $wiki_tree[$wiki_post->ID] = array($wiki_post);
-		}
-		if ($wiki_post->ID == $post->ID) {
-		    $wiki_post->classes = 'current';
-		}
-	    }
-	    
-	    if ($options['hierarchical'] == 'yes') {
-		// 2nd pass
-		foreach ($wiki_posts as $wiki_post) {
-		    if ($wiki_post->post_parent != 0) {
-			if (isset($wiki_tree[$wiki_post->post_parent])) {
-			    $wiki_tree[$wiki_post->post_parent][$wiki_post->ID] = array($wiki_post);
-			}
-		    }
-		}
-		
-		// 3rd pass
-		foreach ($wiki_posts as $wiki_post) {
-		    if ($wiki_post->post_parent != 0) {
-			if (!isset($wiki_tree[$wiki_post->post_parent])) {
-			    $n = get_post($wiki_post->post_parent);
-			    if ($n->post_parent != 0) {
-				$wiki_tree[$n->post_parent][$wiki_post->post_parent] = array($n);
-				$wiki_tree[$n->post_parent][$wiki_post->post_parent][$wiki_post->ID] = array($wiki_post);
-			    } else {
-				$wiki_tree[$wiki_post->post_parent] = array($n);
-				$wiki_tree[$wiki_post->post_parent][$wiki_post->ID] = array($wiki_post);
-			    }
-			}
-		    }
-		}
-	    }
-	?>
-	    <ul>
-		<?php
-		foreach ($wiki_tree as $node) {
-		    $leaf = array_shift($node);
-		    if (count($node) > 0) {
-		?>
-		    <li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a>
-		    <ul>
-		<?php
-			foreach ($node as $nnode) {
-			    $leaf = array_shift($nnode);
-			    if (count($nnode) > 0) {
-			    ?>
-				<li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a>
-				<ul>
-			    <?php
-				    foreach ($nnode as $nnnode) {
-					// print_r($nnnode);
-					$leaf = array_shift($nnnode);
-					?>
-					    <li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a></li>
-				       <?php
-				    }
-			    ?>
-				</ul>
-				</li>
-			    <?php
-			    } else {
-			    ?>
-				 <li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a></li>
-			    <?php
-			    }
-			}
-		?>
-		    </ul>
-		    </li>
-		<?php
-		    } else {
-		?>
-		     <li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a></li>
-		<?php
-		    }
-		}
-		?>
-	    </ul>
-        <br />
-        <?php echo $after_widget; ?>
-	<?php
-    }
-    
-    function widget_control() {
-	global $wpdb;
-	$options = $newoptions = get_option('widget_users');
-	if ( $_POST['wiki-submit'] ) {
-	    $newoptions['title'] = $_POST['wiki-title'];
-	    $newoptions['hierarchical'] = $_POST['wiki-hierarchical'];
-	}
-	if ( $options != $newoptions ) {
-	    $options = $newoptions;
-	    update_option('wiki_widget_options', $options);
-	}
-	?>
-	<div style="text-align:left">
-            <label for="wiki-title" style="line-height:35px;display:block;"><?php _e('Title', $this->translation_domain); ?>:<br />
-		<input class="widefat" id="wiki-title" name="wiki-title" value="<?php echo $options['title']; ?>" type="text" style="width:95%;" />
-            </label>
-	    <label for="wiki-hierarchical" style="line-height:35px;display:block;"><?php _e('Only top level', $this->translation_domain); ?>:<br />
-                <select name="wiki-hierarchical" id="wiki-hierarchical" >
-		    <option value="no" <?php if ($options['hierarchical'] == 'no'){ echo 'selected="selected"'; } ?> ><?php _e('Yes', $this->translation_domain); ?></option>
-		    <option value="yes" <?php if ($options['hierarchical'] == 'yes'){ echo 'selected="selected"'; } ?> ><?php _e('No', $this->translation_domain); ?></option>
-                </select>
-            </label>
-	    <input type="hidden" name="wiki-submit" id="wiki-submit" value="1" />
-	</div>
-	<?php
-    }
-    
     function widgets_init() {
-	register_sidebar_widget(array(__('Wiki', $this->translation_domain), 'widgets'), array(&$this, 'widget'));
-	register_widget_control(array(__('Wiki', $this->translation_domain), 'widgets'), array(&$this, 'widget_control'));
+	register_widget('WikiWidget');
     }
     
     function send_notifications($post_id) {
@@ -688,6 +557,147 @@ Cancel subscription: CANCEL_URL";
 		wp_mail($subscription_to, $subject_content, $loop_notification_content, $message_headers);
 	    }
 	}
+    }
+}
+
+class WikiWidget extends WP_Widget {
+    
+    function WikiWidget() {
+	$widget_ops = array( 'description' => __('Display Wiki Pages', $this->translation_domain) );
+        $control_ops = array( 'title' => __('Wiki', $this->translation_domain), 'hierarchical' => 'yes' );
+        $this->WP_Widget( 'incsub_wiki', __('Wiki', $this->translation_domain), $widget_ops, $control_ops );
+    }
+    
+    function widget($args, $instance) {
+	global $wpdb, $current_site, $post, $wiki_tree;
+	
+	extract($args);
+	
+	$options = $instance;
+	
+	$title = apply_filters('widget_title', empty($instance['title']) ? __('Wiki', $this->translation_domain) : $instance['title'], $instance, $this->id_base);
+	
+	?>
+	<?php echo $before_widget; ?>
+	<?php echo $before_title . $title . $after_title; ?>
+	<?php
+	    $wiki_tree = array();
+	    $wiki_posts = get_posts('post_type=incsub_wiki&order_by=menu_order');
+	    
+	    // 1st pass
+	    foreach ($wiki_posts as $wiki_post) {
+		if ($wiki_post->post_parent == 0) {
+		    $wiki_tree[$wiki_post->ID] = array($wiki_post);
+		}
+		if ($wiki_post->ID == $post->ID) {
+		    $wiki_post->classes = 'current';
+		}
+	    }
+	    
+	    if ($options['hierarchical'] == 'yes') {
+		// 2nd pass
+		foreach ($wiki_posts as $wiki_post) {
+		    if ($wiki_post->post_parent != 0) {
+			if (isset($wiki_tree[$wiki_post->post_parent])) {
+			    $wiki_tree[$wiki_post->post_parent][$wiki_post->ID] = array($wiki_post);
+			}
+		    }
+		}
+		
+		// 3rd pass
+		foreach ($wiki_posts as $wiki_post) {
+		    if ($wiki_post->post_parent != 0) {
+			if (!isset($wiki_tree[$wiki_post->post_parent])) {
+			    $n = get_post($wiki_post->post_parent);
+			    if ($n->post_parent != 0) {
+				$wiki_tree[$n->post_parent][$wiki_post->post_parent] = array($n);
+				$wiki_tree[$n->post_parent][$wiki_post->post_parent][$wiki_post->ID] = array($wiki_post);
+			    } else {
+				$wiki_tree[$wiki_post->post_parent] = array($n);
+				$wiki_tree[$wiki_post->post_parent][$wiki_post->ID] = array($wiki_post);
+			    }
+			}
+		    }
+		}
+	    }
+	?>
+	    <ul>
+		<?php
+		foreach ($wiki_tree as $node) {
+		    $leaf = array_shift($node);
+		    if (count($node) > 0) {
+		?>
+		    <li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a>
+		    <ul>
+		<?php
+			foreach ($node as $nnode) {
+			    $leaf = array_shift($nnode);
+			    if (count($nnode) > 0) {
+			    ?>
+				<li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a>
+				<ul>
+			    <?php
+				    foreach ($nnode as $nnnode) {
+					// print_r($nnnode);
+					$leaf = array_shift($nnnode);
+					?>
+					    <li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a></li>
+				       <?php
+				    }
+			    ?>
+				</ul>
+				</li>
+			    <?php
+			    } else {
+			    ?>
+				 <li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a></li>
+			    <?php
+			    }
+			}
+		?>
+		    </ul>
+		    </li>
+		<?php
+		    } else {
+		?>
+		     <li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a></li>
+		<?php
+		    }
+		}
+		?>
+	    </ul>
+        <br />
+        <?php echo $after_widget; ?>
+	<?php
+    }
+    
+    function update($new_instance, $old_instance) {
+	$instance = $old_instance;
+        $new_instance = wp_parse_args( (array) $new_instance, array( 'title' => __('Wiki', $this->translation_domain), 'hierarchical' => 'yes') );
+        $instance['title'] = strip_tags($new_instance['title']);
+	$instance['hierarchical'] = $new_instance['hierarchical'];
+	
+        return $instance;
+    }
+    
+    function form($instance) {
+	$instance = wp_parse_args( (array) $instance, array( 'title' => __('Wiki', $this->translation_domain), 'hierarchical' => 'yes'));
+        $options = array('title' => strip_tags($instance['title']), 'hierarchical' => $instance['hierarchical']);
+	
+	?>
+	<div style="text-align:left">
+            <label for="<?php echo $this->get_field_id('title'); ?>" style="line-height:35px;display:block;"><?php _e('Title', $this->translation_domain); ?>:<br />
+		<input class="widefat" id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" value="<?php echo $options['title']; ?>" type="text" style="width:95%;" />
+            </label>
+	    <label for="<?php echo $this->get_field_id('hierarchical'); ?>" style="line-height:35px;display:block;"><?php _e('Only top level', $this->translation_domain); ?>:<br />
+                <select id="<?php echo $this->get_field_id('hierarchical'); ?>" name="<?php echo $this->get_field_name('hierarchical'); ?>" >
+		    <option value="no" <?php if ($options['hierarchical'] == 'no'){ echo 'selected="selected"'; } ?> ><?php _e('Yes', $this->translation_domain); ?></option>
+		    <option value="yes" <?php if ($options['hierarchical'] == 'yes'){ echo 'selected="selected"'; } ?> ><?php _e('No', $this->translation_domain); ?></option>
+                </select>
+            </label>
+	    <input type="hidden" name="wiki-submit" id="wiki-submit" value="1" />
+	</div>
+	<?php
     }
 }
 
