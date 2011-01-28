@@ -154,24 +154,136 @@ class Wiki {
 	$new_content  = '<div class="incsub_wiki incsub_wiki_single">';
 	$new_content .= '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
 	
-	$revision_id = absint($_REQUEST['revision']);
-	$left        = absint($_REQUEST['left']);
-	$right       = absint($_REQUEST['right']);
+	$revision_id = isset($_REQUEST['revision'])?absint($_REQUEST['revision']):0;
+    	$left        = isset($_REQUEST['left'])?absint($_REQUEST['left']):0;
+	$right       = isset($_REQUEST['right'])?absint($_REQUEST['right']):0;
+	$action      = isset($_REQUEST['action'])?$_REQUEST['action']:'view';
 	
 	switch ($_REQUEST['action']) {
 	    case 'discussion':
 		break;
 	    case 'restore':
 	    case 'diff':
+		if ( !$left_revision  = get_post( $left ) ) {
+		    break;
+		}
+		if ( !$right_revision = get_post( $right ) ) {
+		    break;
+		}
+		
+		if ( !current_user_can( 'read_post', $left_revision->ID ) || !current_user_can( 'read_post', $right_revision->ID ) ) {
+		    break;
+		}
+		
+		// If we're comparing a revision to itself, redirect to the 'view' page for that revision or the edit page for that post
+		if ( $left_revision->ID == $right_revision->ID ) {
+		    $redirect = get_edit_post_link( $left_revision->ID );
+		    include( ABSPATH . 'wp-admin/js/revisions-js.php' );
+		    break;
+		}
+		
+		// Don't allow reverse diffs?
+		if ( strtotime($right_revision->post_modified_gmt) < strtotime($left_revision->post_modified_gmt) ) {
+		    $redirect = add_query_arg( array( 'left' => $right, 'right' => $left ) );
+		    break;
+		}
+		
+		if ( $left_revision->ID == $right_revision->post_parent ) // right is a revision of left
+		    $post =& $left_revision;
+		elseif ( $left_revision->post_parent == $right_revision->ID ) // left is a revision of right
+		    $post =& $right_revision;
+		elseif ( $left_revision->post_parent == $right_revision->post_parent ) // both are revisions of common parent
+		    $post = get_post( $left_revision->post_parent );
+		else
+		    break; // Don't diff two unrelated revisions
+		
+		if ( ! WP_POST_REVISIONS || !post_type_supports($post->post_type, 'revisions') ) { // Revisions disabled
+		    if (
+			// we're not looking at an autosave
+		    	( !wp_is_post_autosave( $left_revision ) && !wp_is_post_autosave( $right_revision ) )
+			||
+			// we're not comparing an autosave to the current post
+			( $post->ID !== $left_revision->ID && $post->ID !== $right_revision->ID )
+		    ) {
+			$redirect = get_edit_post_link($post->ID, 'display');
+			break;
+		    }
+		}
+		
+		if (
+		    // They're the same
+		    $left_revision->ID == $right_revision->ID
+		    ||
+		    // Neither is a revision
+		    ( !wp_get_post_revision( $left_revision->ID ) && !wp_get_post_revision( $right_revision->ID ) )
+		    ) {
+		    break;
+		}
+		
+		$post_title = '<a href="' . get_edit_post_link() . '">' . get_the_title() . '</a>';
+		$h2 = sprintf( __( 'Compare Revisions of &#8220;%1$s&#8221;' ), $post_title );
+		$title = __( 'Revisions' );
+		
+		$left  = $left_revision->ID;
+		$right = $right_revision->ID;
 	    case 'history':
 		$args = array( 'format' => 'form-table', 'parent' => true, 'right' => $right, 'left' => $left );
-		if ( ! WP_POST_REVISIONS || !post_type_supports($post->post_type, 'revisions') )
+		if ( ! WP_POST_REVISIONS || !post_type_supports($post->post_type, 'revisions') ) {
 		    $args['type'] = 'autosave';
+		}
 		
+		if (!isset($h2)) {
+		    $post_title = '<a href="' . get_edit_post_link() . '">' . get_the_title() . '</a>';
+		    $revision_title = wp_post_revision_title( $revision, false );
+		    $h2 = sprintf( __( 'Revision for &#8220;%1$s&#8221; created on %2$s' ), $post_title, $revision_title );
+		}
+		
+		$new_content .= '<h3 class="long-header">'.$h2.'</h3>';
+		$new_content .= '<table class="form-table ie-fixed">';
+		$new_content .= '<col class="th" />';
+		
+		if ( 'diff' == $action ) :
+		    $new_content .= '<tr id="revision">';
+		    $new_content .= '<th scope="row"></th>';
+		    $new_content .= '<th scope="col" class="th-full">';
+		    $new_content .= '<span class="alignleft">'.sprintf( __('Older: %s', $this->translation_domain), wp_post_revision_title( $left_revision, false ) ).'</span>';
+		    $new_content .= '<span class="alignright">'.sprintf( __('Newer: %s', $this->translation_domain), wp_post_revision_title( $right_revision, false ) ).'</span>';
+		    $new_content .= '</th>';
+		    $new_content .= '</tr>';
+		endif;
+		
+		// use get_post_to_edit filters?
+		$identical = true;
+		foreach ( _wp_post_revision_fields() as $field => $field_title ) :
+		    if ( 'diff' == $action ) {
+			    $left_content = apply_filters( "_wp_post_revision_field_$field", $left_revision->$field, $field );
+			    $right_content = apply_filters( "_wp_post_revision_field_$field", $right_revision->$field, $field );
+			    if ( !$rcontent = wp_text_diff( $left_content, $right_content ) )
+				    continue; // There is no difference between left and right
+			    $identical = false;
+		    } else {
+			    add_filter( "_wp_post_revision_field_$field", 'htmlspecialchars' );
+			    $rcontent = apply_filters( "_wp_post_revision_field_$field", $revision->$field, $field );
+		    }
+		    $new_content .= '<tr id="revision-field-<?php echo $field; ?>">';
+		    $new_content .= '<th scope="row">'.esc_html( $field_title ).'</th>';
+		    $new_content .= '<td><div class="pre">'.$rcontent.'</div></td>';
+		    $new_content .= '</tr>';
+		endforeach;
+		
+		if ( 'diff' == $action && $identical ) :
+		    $new_content .= '<tr><td colspan="2"><div class="updated"><p>'.__( 'These revisions are identical.', $this->translation_domain ). '</p></div></td></tr>';
+		endif;
+		
+		$new_content .= '</table>';
+
+		$new_content .= '<br class="clear" />';
 		$new_content .= '<div class="incsub_wiki_revisions">' . $this->list_post_revisions( $post, $args ) . '</div>';
+		$redirect = false;
 	    break;
 	    default:
 		$new_content .= '<div class="incsub_wiki_content">' . $content . '</div>';
+		$redirect = false;
 	}
 	
 	$new_content .= '</div>';
@@ -184,6 +296,16 @@ class Wiki {
 	    $new_content .= '<style type="text/css">'.
 	    '.hentry { margin-bottom: 5px; }'.
 	    '</style>';
+	}
+	
+	// Empty post_type means either malformed object found, or no valid parent was found.
+	if ( !$redirect && empty($post->post_type) ) {
+	    $redirect = 'edit.php';
+	}
+	
+	if ( !empty($redirect) ) {
+	    wp_redirect( $redirect );
+	    exit;
 	}
 	
 	return $new_content;
