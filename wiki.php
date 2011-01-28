@@ -163,6 +163,24 @@ class Wiki {
 	    case 'discussion':
 		break;
 	    case 'restore':
+		if ( !$revision = wp_get_post_revision( $revision_id ) )
+		    break;
+		if ( !current_user_can( 'edit_post', $revision->post_parent ) )
+		    break;
+		if ( !$post = get_post( $revision->post_parent ) )
+		    break;
+		
+		// Revisions disabled and we're not looking at an autosave
+		if ( ( ! WP_POST_REVISIONS || !post_type_supports($post->post_type, 'revisions') ) && !wp_is_post_autosave( $revision ) ) {
+		    $redirect = get_edit_post_link($post->ID, 'display');
+		    break;
+		}
+		
+		check_admin_referer( "restore-post_$post->ID|$revision->ID" );
+		
+		wp_restore_post_revision( $revision->ID );
+		$redirect = add_query_arg( array( 'message' => 5, 'revision' => $revision->ID ), get_edit_post_link( $post->ID, 'url' ) );
+		break;
 	    case 'diff':
 		if ( !$left_revision  = get_post( $left ) ) {
 		    break;
