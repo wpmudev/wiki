@@ -79,12 +79,16 @@ class Wiki {
 	
 	add_action('widgets_init', array(&$this, 'widgets_init'));
 	add_action('pre_post_update', array(&$this, 'send_notifications'), 50, 1);
+	add_action('template_redirect', array(&$this, 'load_templates') );
 	
 	add_filter('post_type_link', array(&$this, 'post_type_link'), 10, 3);
 	add_filter('name_save_pre', array(&$this, 'name_save'));
 	add_filter('the_content', array(&$this, 'the_content'));
 	add_filter('role_has_cap', array(&$this, 'role_has_cap'), 10, 3);
 	add_filter('user_has_cap', array(&$this, 'user_has_cap'), 10, 3);
+	
+	add_filter('get_edit_post_link', array(&$this, 'get_edit_post_link'));
+	add_filter('comments_open', array(&$this, 'comments_open'), 10, 1);
 	
 	// White list the options to make sure non super admin can save wiki options 
 	// add_filter('whitelist_options', array(&$this, 'whitelist_options'));
@@ -97,6 +101,287 @@ class Wiki {
 	
 	$this->_options['default'] = get_option('wiki_default', array( 
         ));
+    }
+    
+    function load_templates() {
+	global $wp_query;
+	
+	if ($wp_query->is_single && $wp_query->query_vars['post_type'] == 'incsub_wiki') {
+	    //check for custom theme templates
+	    $wiki_name = get_query_var('incsub_wiki');
+	    $wiki_id = (int) $wp_query->get_queried_object_id();
+	    $templates = array();
+	    
+	    if ( $product_name ) {
+		$templates[] = "incsub_wiki-$wiki_name.php";
+	    }
+	    
+	    if ( $product_id ) {
+		$templates[] = "incsub_wiki-$wiki_id.php";
+	    }
+	    $templates[] = "incsub_wiki.php";
+	    
+	    if ($this->product_template = locate_template($templates)) {
+	      add_filter('template_include', array(&$this, 'custom_template') );
+	    } else {
+	      //otherwise load the page template and use our own theme
+	      $wp_query->is_single = null;
+	      $wp_query->is_page = 1;
+	      add_filter('the_content', array(&$this, 'theme'), 99 );
+	    }
+	    $this->is_wiki_page = true;
+	}
+    }
+    
+    function custom_template() {
+	return $this->product_template;
+    }
+    
+    function comments_open($open) {
+	global $post, $incsub_tab_check;
+	
+	if ($post->post_type == 'incsub_wiki' && $_REQUEST['action'] != 'discussion') {
+	    if ($incsub_tab_check == 0 && !isset($_POST['submit'])) {
+		return false;
+	    }
+	}
+	return $open;
+    }
+
+    function theme($content) {
+	global $post;
+	
+	$new_content  = '<div class="incsub_wiki incsub_wiki_single">';
+	$new_content .= '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
+	
+	$revision_id = absint($_REQUEST['revision']);
+	$left        = absint($_REQUEST['left']);
+	$right       = absint($_REQUEST['right']);
+	
+	switch ($_REQUEST['action']) {
+	    case 'discussion':
+		break;
+	    case 'restore':
+	    case 'diff':
+	    case 'history':
+		$args = array( 'format' => 'form-table', 'parent' => true, 'right' => $right, 'left' => $left );
+		if ( ! WP_POST_REVISIONS || !post_type_supports($post->post_type, 'revisions') )
+		    $args['type'] = 'autosave';
+		
+		$new_content .= '<div class="incsub_wiki_revisions">' . $this->list_post_revisions( $post, $args ) . '</div>';
+	    break;
+	    default:
+		$new_content .= '<div class="incsub_wiki_content">' . $content . '</div>';
+	}
+	
+	$new_content .= '</div>';
+	
+	if ( !comments_open() ) {
+	    $new_content .= '<style type="text/css">'.
+	    '#comments { display: none; }'.
+	    '</style>';
+	} else {
+	    $new_content .= '<style type="text/css">'.
+	    '.hentry { margin-bottom: 5px; }'.
+	    '</style>';
+	}
+	
+	return $new_content;
+    }
+    
+    function tabs() {
+	global $post, $incsub_tab_check;
+	
+	$incsub_tab_check = 1;
+	
+	$classes['page'] = array('incsub_wiki_link_page');
+	$classes['discussion'] = array('incsub_wiki_link_discussion');
+	$classes['history'] = array('incsub_wiki_link_history');
+	$classes['edit'] = array('incsub_wiki_link_edit');
+	$classes['create'] = array('incsub_wiki_link_create');
+	
+	if (!isset($_REQUEST['action'])) {
+	    $classes['page'][] = 'current';
+	}
+	if (isset($_REQUEST['action'])) {
+	    switch ($_REQUEST['action']) {
+		case 'page':
+		    $classes['page'][] = 'current';
+		    break;
+		case 'discussion':
+		    $classes['discussion'][] = 'current';
+		    break;
+		case 'restore':
+		case 'diff':
+		case 'history':
+		    $classes['history'][] = 'current';
+		    break;
+		case 'edit':
+		    $classes['edit'][] = 'current';
+		    break;
+		case 'create':
+		    $classes['create'][] = 'current';
+		    break;
+	    }
+	}
+	$tabs  = '<ul class="left">';
+	$tabs .= '<li class="'.join(' ', $classes['page']).'" ><a href="'.get_permalink().'" >' . __('Page', $this->translation_domain) . '</a></li>';
+	if (comments_open()) {
+	    $tabs .= '<li class="'.join(' ', $classes['discussion']).'" ><a href="'.get_permalink().'?action=discussion" >' . __('Discussion', $this->translation_domain) . '</a></li>';
+	}
+	$tabs .= '<li class="'.join(' ', $classes['history']).'" ><a href="'.get_permalink().'?action=history" >' . __('History', $this->translation_domain) . '</a></li>';
+	$tabs .= '</ul>';
+	
+	$post_type_object = get_post_type_object( $post->post_type );
+	
+	if (current_user_can($post_type_object->cap->edit_post, $post->ID)) {
+	    $tabs .= '<ul class="right">';
+	    $tabs .= '<li class="'.join(' ', $classes['edit']).'" ><a href="'.get_edit_post_link($post->ID, 'display').'" >' . __('Edit', $this->translation_domain) . '</a></li>';
+	    $tabs .= '<li class="'.join(' ', $classes['create']).'"><a href="'.get_edit_post_link($post->ID, 'display').'?action=create">'.__('Create new', $this->translation_domain).'</a></li>';
+	    $tabs .= '</ul>';
+	}
+	
+	$incsub_tab_check = 0;
+	
+	return $tabs;
+    }
+    
+    function get_edit_post_link($url, $id = 0, $context = 'display') {
+	global $post;
+	if ($post->post_type == 'incsub_wiki') {
+	    return get_permalink().'?action=edit';
+	}
+	return $url;
+    }
+    
+    /**
+     * Display list of a post's revisions.
+     *
+     * Can output either a UL with edit links or a TABLE with diff interface, and
+     * restore action links.
+     *
+     * Second argument controls parameters:
+     *   (bool)   parent : include the parent (the "Current Revision") in the list.
+     *   (string) format : 'list' or 'form-table'.  'list' outputs UL, 'form-table'
+     *                     outputs TABLE with UI.
+     *   (int)    right  : what revision is currently being viewed - used in
+     *                     form-table format.
+     *   (int)    left   : what revision is currently being diffed against right -
+     *                     used in form-table format.
+     *
+     * @package WordPress
+     * @subpackage Post_Revisions
+     * @since 2.6.0
+     *
+     * @uses wp_get_post_revisions()
+     * @uses wp_post_revision_title()
+     * @uses get_edit_post_link()
+     * @uses get_the_author_meta()
+     *
+     * @todo split into two functions (list, form-table) ?
+     *
+     * @param int|object $post_id Post ID or post object.
+     * @param string|array $args See description {@link wp_parse_args()}.
+     * @return null
+     */
+    function list_post_revisions( $post_id = 0, $args = null ) {
+	if ( !$post = get_post( $post_id ) )
+	    return;
+	
+	$content = '';
+	$defaults = array( 'parent' => false, 'right' => false, 'left' => false, 'format' => 'list', 'type' => 'all' );
+	extract( wp_parse_args( $args, $defaults ), EXTR_SKIP );
+	switch ( $type ) {
+	    case 'autosave' :
+		if ( !$autosave = wp_get_post_autosave( $post->ID ) )
+		    return;
+		$revisions = array( $autosave );
+		break;
+	    case 'revision' : // just revisions - remove autosave later
+	    case 'all' :
+	    default :
+		if ( !$revisions = wp_get_post_revisions( $post->ID ) )
+		   return;
+		break;
+	}
+	
+	/* translators: post revision: 1: when, 2: author name */
+	$titlef = _x( '%1$s by %2$s', 'post revision' );
+	
+	if ( $parent )
+	    array_unshift( $revisions, $post );
+	    
+	$rows = '';
+        $class = false;
+	$can_edit_post = current_user_can( 'edit_post', $post->ID );
+        foreach ( $revisions as $revision ) {
+	    if ( !current_user_can( 'read_post', $revision->ID ) )
+		continue;
+	    if ( 'revision' === $type && wp_is_post_autosave( $revision ) )
+		continue;
+	    
+	    $date = wp_post_revision_title( $revision, false );
+	    $name = get_the_author_meta( 'display_name', $revision->post_author );
+	    
+	    if ( 'form-table' == $format ) {
+		if ( $left )
+		    $left_checked = $left == $revision->ID ? ' checked="checked"' : '';
+		else
+		    $left_checked = $right_checked ? ' checked="checked"' : ''; // [sic] (the next one)
+		
+		$right_checked = $right == $revision->ID ? ' checked="checked"' : '';
+		
+		$class = $class ? '' : " class='alternate'";
+		
+		if ( $post->ID != $revision->ID && $can_edit_post )
+		    $actions = '<a href="' . wp_nonce_url( add_query_arg( array( 'revision' => $revision->ID, 'action' => 'restore' ) ), "restore-post_$post->ID|$revision->ID" ) . '">' . __( 'Restore' ) . '</a>';
+		else
+		    $actions = '';
+		    
+		$rows .= "<tr$class>\n";
+	        $rows .= "\t<td style='white-space: nowrap' scope='row'><input type='radio' name='left' value='{$revision->ID}' {$left_checked} /></td>\n";
+	        $rows .= "\t<td style='white-space: nowrap' scope='row'><input type='radio' name='right' value='{$revision->ID}' {$right_checked} /></td>\n";
+		$rows .= "\t<td>$date</td>\n";
+		$rows .= "\t<td>$name</td>\n";
+	        $rows .= "\t<td class='action-links'>$actions</td>\n";
+		$rows .= "</tr>\n";
+	    } else {
+		$title = sprintf( $titlef, $date, $name );
+		$rows .= "\t<li>$title</li>\n";
+	    }
+        }
+	if ( 'form-table' == $format ) :
+	    $content .= '<form action="'.get_permalink().'" method="get">';
+	    $content .= '<div class="tablenav">';
+	    $content .= '<div class="alignleft">';
+	    $content .= '<input type="submit" class="button-secondary" value="'.esc_attr( 'Compare Revisions' ).'" />';
+	    $content .= '<input type="hidden" name="action" value="diff" />';
+	    $content .= '<input type="hidden" name="post_type" value="'.esc_attr($post->post_type).'" />';
+	    $content .= '</div>';
+	    $content .= '</div>';
+	    $content .= '<br class="clear" />';
+	    $content .= '<table class="widefat post-revisions" cellspacing="0" id="post-revisions">';
+	    $content .= '<col /><col /><col style="width: 33%" /><col style="width: 33%" /><col style="width: 33%" />';
+	    $content .= '<thead>';
+	    $content .= '<tr>';
+	    $content .= '<th scope="col">'._x( 'Old', 'revisions column name', $this->translation_domain ).'</th>';
+	    $content .= '<th scope="col">'._x( 'New', 'revisions column name', $this->translation_domain ).'</th>';
+	    $content .= '<th scope="col">'._x( 'Date Created', 'revisions column name', $this->translation_domain ).'</th>';
+	    $content .= '<th scope="col">'.__( 'Author', $this->translation_domain, $this->translation_domain ).'</th>';
+	    $content .= '<th scope="col" class="action-links">'.__( 'Actions', $this->translation_domain ).'</th>';
+	    $content .= '</tr>';
+	    $content .= '</thead>';
+	    $content .= '<tbody>';
+	    $content .= $rows;
+	    $content .= '</tbody>';
+	    $content .= '</table>';
+	    $content .= '</form>';
+	   else :
+	    $content .= "<ul class='post-revisions'>\n";
+	    $content .= $rows;
+	    $content .= "</ul>";
+	endif;
+	return $content;
     }
     
     function user_has_cap($allcaps, $caps = null, $args = null) {
@@ -219,7 +504,7 @@ class Wiki {
 	$this->_options = array(
         );
 	
-	add_option('wiki_default', $this->_chat_options['default']);
+	add_option('wiki_default', $this->_options['default']);
     }
     
     /**
@@ -272,7 +557,7 @@ class Wiki {
 	    'menu_name' => __('Wikis', $this->translation_domain)
 	);
 	
-	$supports = array( 'title', 'editor', 'author', 'revisions', 'page-attributes');
+	$supports = array( 'title', 'editor', 'author', 'revisions', 'comments', 'page-attributes');
 	
 	register_post_type( 'incsub_wiki',
 	    array(
@@ -373,10 +658,8 @@ class Wiki {
 	    $bottom .= '<div class="incsub_wiki-meta">';
 	    if (is_array($revisions) && count($revisions) > 0) {
 		$revision = array_shift($revisions);
-		$bottom .= '<a href="'.wp_nonce_url(add_query_arg(array('revision' => $revision->ID), admin_url('revision.php')), "restore-post_$post->ID|$revision->ID" ).'">'.__('Revisions', $this->translation_domain).'</a> &nbsp;';
 	    }
-	    $bottom .= '<a href="'.admin_url('post-new.php?post_type=incsub_wiki').'">'.__('Create new Wiki', $this->translation_domain).'</a>'.
-	    '</div>';
+	    $bottom .= '</div>';
 	}
 	
 	$notification_meta = get_post_custom($post->ID, array('incsub_wiki_email_notification' => 'enabled'));
@@ -478,7 +761,7 @@ class Wiki {
 	if (!is_array($current_privileges)) {
 	    $current_privileges = array('edit_posts');
 	}
-	$privileges = array(/*'anyone' => 'Anyone',*/ 'network' => 'Network users', 'site' => 'Site users', 'edit_posts' => 'Users who can edit posts in this site');
+	$privileges = array('anyone' => 'Anyone', 'network' => 'Network users', 'site' => 'Site users', 'edit_posts' => 'Users who can edit posts in this site');
 	?>
 	<input type="hidden" name="incsub_wiki_privileges_meta" value="1" />
 	<div class="alignleft">
@@ -644,6 +927,11 @@ Cancel subscription: CANCEL_URL";
 }
 
 class WikiWidget extends WP_Widget {
+    
+    /**
+     * @var		string	$translation_domain	Translation domain
+     */
+    var $translation_domain = 'wiki';
     
     function WikiWidget() {
 	$widget_ops = array( 'description' => __('Display Wiki Pages', $this->translation_domain) );

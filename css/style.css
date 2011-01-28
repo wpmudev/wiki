@@ -2,3 +2,66 @@
     color: #000;
     font-weight: bold;
 }
+
+.incsub_wiki_clear {
+    clear: both;
+}
+
+.incsub_wiki_tabs {
+    border: solid #999;
+    border-width: 0 0 1px 0;
+}
+
+.incsub_wiki_tabs ul {
+    margin: 0;
+    padding: 0;
+}
+
+#content .incsub_wiki_tabs ul {
+    margin-bottom: 0;
+}
+
+.incsub_wiki_tabs ul.left {
+    float: left;
+    margin-left: 1em;
+}
+
+.incsub_wiki_tabs ul.right {
+    float: right;
+    margin-right: 1em;
+}
+
+.incsub_wiki_tabs li {
+    display: inline;
+    border: solid #999;
+    border-width: 1px 1px 0 1px;
+    padding-bottom: 0.1em;
+    margin: 0 0.5em 0 0;
+    color: #333;
+    background: #efefef;
+}
+
+.incsub_wiki_tabs .right li {
+    margin: 0 0 0 0.5em;
+}
+
+.incsub_wiki_tabs li.current {
+    border-bottom: 1px solid white;
+    color: black;
+    background: white;
+}
+
+.incsub_wiki_tabs li a {
+    padding: 0 1em;
+    text-decoration: none;
+    color: inherit;
+}
+
+.type-incsub_wiki .post-edit-link {
+    display: none;
+}
+
+.incsub_wiki_content {
+    margin: 0.2em 0.5em;
+}
+
