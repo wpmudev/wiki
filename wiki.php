@@ -68,6 +68,7 @@ class Wiki {
         // Actions
 	add_action('init', array(&$this, 'init'), 0);
 	add_action('wp_head', array(&$this, 'output_css'));
+	add_action('wp_head', array(&$this, 'output_js'), 0);
     	
 	add_action('admin_print_styles-settings_page_wiki', array(&$this, 'admin_styles'));
     	add_action('admin_print_scripts-settings_page_wiki', array(&$this, 'admin_scripts'));
@@ -162,6 +163,41 @@ class Wiki {
 	switch ($_REQUEST['action']) {
 	    case 'discussion':
 		break;
+	    case 'edit':
+		set_include_path(get_include_path().PATH_SEPARATOR.ABSPATH.'wp-admin');
+		
+		$post_type_object = get_post_type_object($post->post_type);
+		
+		$p = $post;
+		
+		if ( empty($post->ID) )
+		    wp_die( __('You attempted to edit an item that doesn&#8217;t exist. Perhaps it was deleted?') );
+		    
+		if ( !current_user_can($post_type_object->cap->edit_post, $post_id) )
+		    wp_die( __('You are not allowed to edit this item.') );
+		    
+		if ( 'trash' == $post->post_status )
+		    wp_die( __('You can&#8217;t edit this item because it is in the Trash. Please restore it and try again.') );
+		    
+		if ( null == $post_type_object )
+		    wp_die( __('Unknown post type.') );
+		    
+		$post_type = $post->post_type;
+		
+		if ( $last = $this->check_post_lock( $post->ID ) ) {
+		    add_action('admin_notices', '_admin_notice_post_locked' );
+		} else {
+		    $this->set_post_lock( $post->ID );
+		    wp_enqueue_script('autosave');
+		}
+		
+		$title = $post_type_object->labels->edit_item;
+		$post = $this->post_to_edit($post_id);
+		
+		$new_content .= $this->get_edit_form();
+		// $new_content .= $this->get_meta_boxes();
+		
+		break;
 	    case 'restore':
 		if ( !$revision = wp_get_post_revision( $revision_id ) )
 		    break;
@@ -172,14 +208,14 @@ class Wiki {
 		
 		// Revisions disabled and we're not looking at an autosave
 		if ( ( ! WP_POST_REVISIONS || !post_type_supports($post->post_type, 'revisions') ) && !wp_is_post_autosave( $revision ) ) {
-		    $redirect = get_edit_post_link($post->ID, 'display');
+		    $redirect = get_permalink().'?action=edit';
 		    break;
 		}
 		
 		check_admin_referer( "restore-post_$post->ID|$revision->ID" );
 		
 		wp_restore_post_revision( $revision->ID );
-		$redirect = add_query_arg( array( 'message' => 5, 'revision' => $revision->ID ), get_edit_post_link( $post->ID, 'url' ) );
+		$redirect = add_query_arg( array( 'message' => 5, 'revision' => $revision->ID ), get_permalink().'?action=edit' );
 		break;
 	    case 'diff':
 		if ( !$left_revision  = get_post( $left ) ) {
@@ -223,7 +259,7 @@ class Wiki {
 			// we're not comparing an autosave to the current post
 			( $post->ID !== $left_revision->ID && $post->ID !== $right_revision->ID )
 		    ) {
-			$redirect = get_edit_post_link($post->ID, 'display');
+			$redirect = get_permalink().'?action=edit';
 			break;
 		    }
 		}
@@ -238,20 +274,22 @@ class Wiki {
 		    break;
 		}
 		
-		$post_title = '<a href="' . get_edit_post_link() . '">' . get_the_title() . '</a>';
+		$post_title = '<a href="' . get_permalink().'?action=edit' . '">' . get_the_title() . '</a>';
 		$h2 = sprintf( __( 'Compare Revisions of &#8220;%1$s&#8221;' ), $post_title );
 		$title = __( 'Revisions' );
 		
 		$left  = $left_revision->ID;
 		$right = $right_revision->ID;
 	    case 'history':
-		$args = array( 'format' => 'form-table', 'parent' => true, 'right' => $right, 'left' => $left );
+		$args = array( 'format' => 'form-table', 'parent' => false, 'right' => $right, 'left' => $left );
 		if ( ! WP_POST_REVISIONS || !post_type_supports($post->post_type, 'revisions') ) {
 		    $args['type'] = 'autosave';
 		}
 		
 		if (!isset($h2)) {
-		    $post_title = '<a href="' . get_edit_post_link() . '">' . get_the_title() . '</a>';
+		    $post_title = '<a href="' . get_permalink().'?action=edit' . '">' . get_the_title() . '</a>';
+		    $revisions = wp_get_post_revisions( $post->ID );
+		    $revision = array_shift($revisions);
 		    $revision_title = wp_post_revision_title( $revision, false );
 		    $h2 = sprintf( __( 'Revision for &#8220;%1$s&#8221; created on %2$s' ), $post_title, $revision_title );
 		}
@@ -274,14 +312,14 @@ class Wiki {
 		$identical = true;
 		foreach ( _wp_post_revision_fields() as $field => $field_title ) :
 		    if ( 'diff' == $action ) {
-			    $left_content = apply_filters( "_wp_post_revision_field_$field", $left_revision->$field, $field );
-			    $right_content = apply_filters( "_wp_post_revision_field_$field", $right_revision->$field, $field );
-			    if ( !$rcontent = wp_text_diff( $left_content, $right_content ) )
-				    continue; // There is no difference between left and right
-			    $identical = false;
+			$left_content = apply_filters( "_wp_post_revision_field_$field", $left_revision->$field, $field );
+			$right_content = apply_filters( "_wp_post_revision_field_$field", $right_revision->$field, $field );
+			if ( !$rcontent = wp_text_diff( $left_content, $right_content ) )
+			        continue; // There is no difference between left and right
+			$identical = false;
 		    } else {
-			    add_filter( "_wp_post_revision_field_$field", 'htmlspecialchars' );
-			    $rcontent = apply_filters( "_wp_post_revision_field_$field", $revision->$field, $field );
+			add_filter( "_wp_post_revision_field_$field", 'htmlspecialchars' );
+			$rcontent = apply_filters( "_wp_post_revision_field_$field", $revision->$field, $field );
 		    }
 		    $new_content .= '<tr id="revision-field-<?php echo $field; ?>">';
 		    $new_content .= '<th scope="row">'.esc_html( $field_title ).'</th>';
@@ -329,6 +367,110 @@ class Wiki {
 	return $new_content;
     }
     
+    function enqueue_comment_hotkeys_js() {
+        if ( 'true' == get_user_option( 'comment_shortcuts' ) )
+            wp_enqueue_script( 'jquery-table-hotkeys' );
+    }
+    
+    /**
+     * Get an existing post and format it for editing.
+     *
+     * @since 2.0.0
+     *
+     * @param unknown_type $id
+     * @return unknown
+     */
+    function post_to_edit( $id ) {
+	$post = get_post( $id, OBJECT, 'edit' );
+	
+	if ( $post->post_type == 'page' )
+	    $post->page_template = get_post_meta( $id, '_wp_page_template', true );
+	return $post;
+    }
+    
+    /**
+     * Check to see if the post is currently being edited by another user.
+     *
+     * @since 2.5.0
+     *
+     * @param int $post_id ID of the post to check for editing
+     * @return bool|int False: not locked or locked by current user. Int: user ID of user with lock.
+     */
+    function check_post_lock( $post_id ) {
+	if ( !$post = get_post( $post_id ) )
+	    return false;
+	
+	if ( !$lock = get_post_meta( $post->ID, '_edit_lock', true ) )
+	    return false;
+	
+	$lock = explode( ':', $lock );
+	$time = $lock[0];
+	$user = isset( $lock[1] ) ? $lock[1] : get_post_meta( $post->ID, '_edit_last', true );
+	
+	$time_window = apply_filters( 'wp_check_post_lock_window', AUTOSAVE_INTERVAL * 2 );
+	
+	if ( $time && $time > time() - $time_window && $user != get_current_user_id() )
+    	   return $user;
+       return false;
+    }
+    
+    /**
+     * Mark the post as currently being edited by the current user
+     *
+     * @since 2.5.0
+     *
+     * @param int $post_id ID of the post to being edited
+     * @return bool Returns false if the post doesn't exist of there is no current user
+     */
+    function set_post_lock( $post_id ) {
+	if ( !$post = get_post( $post_id ) )
+	    return false;
+	if ( 0 == ($user_id = get_current_user_id()) )
+	    return false;
+	
+	$now = time();
+	$lock = "$now:$user_id";
+	
+	update_post_meta( $post->ID, '_edit_lock', $lock );
+    }
+    
+    function get_edit_form() {
+	global $post;
+	
+	$content  = '<h3>'.__('Edit', $this->translation_domain).'</h3>';
+	$content .= '<form action="'.get_permalink().'" method="get">';
+	$content .= '<input type="hidden" name="wiki_id" id="wiki_id" value="'.$post->ID.'" />';
+	$content .= '<input type="hidden" name="parent_id" id="parent_id" value="'.$post->post_parent.'" />';
+	$content .= '<input type="hidden" name="action" id="wiki_action" value="edit" />';
+	$content .= '<div><input type="text" name="wiki_title" id="wiki_title" value="'.$post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
+	$content .= '<div><textarea name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$post->post_content.'</textarea></div>';
+	if (is_user_logged_in()) {
+	    $content .= $this->get_meta_form();
+	}
+	$content .= '<div class="incsub_wiki_clear">';
+	$content .= '<input type="submit" name="save" id="btn_save" value="'.__('Save', $this->translation_domain).'" />&nbsp;';
+	$content .= '<a href="'.get_permalink().'?action=edit">'.__('Cancel', $this->translation_domain).'</a>';
+	$content .= '</div>';
+	$content .= '</form>';
+	
+	$wiki_admin = new WikiAdmin();
+	
+	$wiki_admin->tiny_mce(true, array("editor_selector" => "incusb_wiki_tinymce"));
+	
+	return $content;
+    }
+    
+    function get_meta_form() {
+	global $post;
+	
+	$content  = '';
+	
+	$content .= '<div class="incsub_wiki_meta_box">'.$this->notifications_meta_box(false).'</div>';
+	$content .= '<div class="incsub_wiki_meta_box">'.$this->privileges_meta_box(false).'</div>';
+	
+	return $content;
+    }
+    
     function tabs() {
 	global $post, $incsub_tab_check;
 	
@@ -338,6 +480,7 @@ class Wiki {
 	$classes['discussion'] = array('incsub_wiki_link_discussion');
 	$classes['history'] = array('incsub_wiki_link_history');
 	$classes['edit'] = array('incsub_wiki_link_edit');
+	$classes['advanced_edit'] = array('incsub_wiki_link_advanced_edit');
 	$classes['create'] = array('incsub_wiki_link_create');
 	
 	if (!isset($_REQUEST['action'])) {
@@ -357,10 +500,10 @@ class Wiki {
 		    $classes['history'][] = 'current';
 		    break;
 		case 'edit':
-		    $classes['edit'][] = 'current';
-		    break;
-		case 'create':
-		    $classes['create'][] = 'current';
+		    if (isset($_REQUEST['eaction']) && $_REQUEST['eaction'] == 'create')
+			$classes['create'][] = 'current';
+		    else
+			$classes['edit'][] = 'current';
 		    break;
 	    }
 	}
@@ -376,8 +519,11 @@ class Wiki {
 	
 	if (current_user_can($post_type_object->cap->edit_post, $post->ID)) {
 	    $tabs .= '<ul class="right">';
-	    $tabs .= '<li class="'.join(' ', $classes['edit']).'" ><a href="'.get_edit_post_link($post->ID, 'display').'" >' . __('Edit', $this->translation_domain) . '</a></li>';
-	    $tabs .= '<li class="'.join(' ', $classes['create']).'"><a href="'.get_edit_post_link($post->ID, 'display').'?action=create">'.__('Create new', $this->translation_domain).'</a></li>';
+	    $tabs .= '<li class="'.join(' ', $classes['edit']).'" ><a href="'.get_permalink().'?action=edit" >' . __('Edit', $this->translation_domain) . '</a></li>';
+	    if (is_user_logged_in()) {
+	    $tabs .= '<li class="'.join(' ', $classes['advanced_edit']).'" ><a href="'.get_edit_post_link().'" >' . __('Advanced', $this->translation_domain) . '</a></li>';
+	    }
+	    $tabs .= '<li class="'.join(' ', $classes['create']).'"><a href="'.get_permalink().'?action=edit&eaction=create">'.__('Create new', $this->translation_domain).'</a></li>';
 	    $tabs .= '</ul>';
 	}
 	
@@ -388,9 +534,6 @@ class Wiki {
     
     function get_edit_post_link($url, $id = 0, $context = 'display') {
 	global $post;
-	if ($post->post_type == 'incsub_wiki') {
-	    return get_permalink().'?action=edit';
-	}
 	return $url;
     }
     
@@ -683,6 +826,8 @@ class Wiki {
 	    load_plugin_textdomain($this->translation_domain, false, dirname(plugin_basename(__FILE__)).'/languages');
 	}
 	
+	wp_register_script('incsub_wiki_js', plugins_url('wiki/js/wiki-utils.js'), null, $this->current_version);
+	
 	$labels = array(
 	    'name' => __('Wikis', $this->translation_domain),
 	    'singular_name' => __('Wiki', $this->translation_domain),
@@ -753,6 +898,10 @@ class Wiki {
      */
     function output_css() {
         echo '<link rel="stylesheet" href="' . plugins_url('wiki/css/style.css') . '" type="text/css" />';
+    }
+    
+    function output_js() {
+	wp_enqueue_script('utils');
     }
 
     function the_content($content) {
@@ -892,42 +1041,51 @@ class Wiki {
 	return $post_name;
     }
     
-    function privileges_meta_box() {
+    function privileges_meta_box($echo = true) {
 	global $post;
 	$settings = get_option('incsub_wiki_settings');
 	$meta = get_post_custom($post->ID);
 	
+	$content  = '';
 	$current_privileges = unserialize($meta["incsub_wiki_privileges"][0]);
 	if (!is_array($current_privileges)) {
 	    $current_privileges = array('edit_posts');
 	}
 	$privileges = array('anyone' => 'Anyone', 'network' => 'Network users', 'site' => 'Site users', 'edit_posts' => 'Users who can edit posts in this site');
-	?>
-	<input type="hidden" name="incsub_wiki_privileges_meta" value="1" />
-	<div class="alignleft">
-	    <b><?php _e('Allow editing by', $this->translation_domain); ?></b><br/>
-	    <?php foreach ($privileges as $key => $privilege) { ?>
-	    <label><input type="checkbox" name="incsub_wiki_privileges[]" value="<?php print $key; ?>" <?php print (in_array($key, $current_privileges))?'checked="checked"':''; ?> /> <?php _e($privilege, $this->translation_domain); ?></label><br/>
-	    <?php } ?>
-	</div>
-	<div class="clear"></div>
-	<?php
+	
+	$content .= '<input type="hidden" name="incsub_wiki_privileges_meta" value="1" />';
+	$content .= '<div class="alignleft">';
+	$content .= '<b>'. __('Allow editing by', $this->translation_domain).'</b><br/>';
+	foreach ($privileges as $key => $privilege) {
+	    $content .= '<label class="incsub_wiki_label_roles"><input type="checkbox" name="incsub_wiki_privileges[]" value="'.$key.'" '.((in_array($key, $current_privileges))?'checked="checked"':'').' /> '.__($privilege, $this->translation_domain).'</label><br class="incsub_wiki_br_roles"/>';
+	}
+	$content .= '</div>';
+	$content .= '<div class="clear"></div>';
+	
+	if ($echo) {
+	    echo $content;
+	}
+	return $content;
     }
     
-    function notifications_meta_box() {
+    function notifications_meta_box($echo = true) {
 	global $post;
 	$settings = get_option('incsub_wiki_settings');
 	$meta = get_post_custom($post->ID);
 	if ($meta == array()) {
 	    $meta = array('incsub_wiki_email_notification' => array('enabled'));
 	}
-	?>
-	<input type="hidden" name="incsub_wiki_notifications_meta" value="1" />
-	<div class="alignleft">
-	    <label><input type="checkbox" name="incsub_wiki_email_notification" value="enabled" <?php print ($meta["incsub_wiki_email_notification"][0] == "")?'':'checked="checked"'; ?> /> <?php _e('Enable e-mail notifications', $this->translation_domain); ?></label>
-	</div>
-	<div class="clear"></div>
-	<?php
+	$content  = '';
+	$content .= '<input type="hidden" name="incsub_wiki_notifications_meta" value="1" />';
+	$content .= '<div class="alignleft">';
+	$content .= '<label><input type="checkbox" name="incsub_wiki_email_notification" value="enabled" '.(($meta["incsub_wiki_email_notification"][0] == "")?'':'checked="checked"').' /> '.__('Enable e-mail notifications', $this->translation_domain).'</label>';
+	$content .= '</div>';
+	$content .= '<div class="clear"></div>';
+	
+	if ($echo) {
+	    echo $content;
+	}
+	return $content;
     }
     
     function save_wiki_meta($post_id, $post = null) {
@@ -1149,7 +1307,6 @@ class WikiWidget extends WP_Widget {
 				<ul>
 			    <?php
 				    foreach ($nnode as $nnnode) {
-					// print_r($nnnode);
 					$leaf = array_shift($nnnode);
 					?>
 					    <li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a></li>
@@ -1209,6 +1366,310 @@ class WikiWidget extends WP_Widget {
 	    <input type="hidden" name="wiki-submit" id="wiki-submit" value="1" />
 	</div>
 	<?php
+    }
+}
+
+class WikiAdmin {
+    /**
+     * Adds the TinyMCE editor used on the Write and Edit screens.
+     *
+     * @package WordPress
+     * @since 2.7.0
+     *
+     * TinyMCE is loaded separately from other Javascript by using wp-tinymce.php. It outputs concatenated
+     * and optionaly pre-compressed version of the core and all default plugins. Additional plugins are loaded
+     * directly by TinyMCE using non-blocking method. Custom plugins can be refreshed by adding a query string
+     * to the URL when queueing them with the mce_external_plugins filter.
+     *
+     * @param bool $teeny optional Output a trimmed down version used in Press This.
+     * @param mixed $settings optional An array that can add to or overwrite the default TinyMCE settings.
+     */
+    function tiny_mce( $teeny = false, $settings = false ) {
+	global $concatenate_scripts, $compress_scripts, $tinymce_version, $editor_styles;
+	
+	if ( ! user_can_richedit() )
+	    return;
+	
+	$baseurl = includes_url('js/tinymce');
+	
+	$mce_locale = ( '' == get_locale() ) ? 'en' : strtolower( substr(get_locale(), 0, 2) ); // only ISO 639-1
+	
+	/*
+	The following filter allows localization scripts to change the languages displayed in the spellchecker's drop-down menu.
+	By default it uses Google's spellchecker API, but can be configured to use PSpell/ASpell if installed on the server.
+	The + sign marks the default language. More information:
+	http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/spellchecker
+	*/
+	$mce_spellchecker_languages = apply_filters('mce_spellchecker_languages', '+English=en,Danish=da,Dutch=nl,Finnish=fi,French=fr,German=de,Italian=it,Polish=pl,Portuguese=pt,Spanish=es,Swedish=sv');
+	
+	if ( $teeny ) {
+	    $plugins = apply_filters( 'teeny_mce_plugins', array('inlinepopups', 'fullscreen', 'wordpress', 'wplink', 'wpdialogs') );
+	    $ext_plugins = '';
+	} else {
+	    $plugins = array( 'inlinepopups', 'spellchecker', 'paste', 'wordpress', 'fullscreen', 'wpeditimage', 'wpgallery', 'tabfocus', 'wplink', 'wpdialogs' );
+	    
+	    /*
+	    The following filter takes an associative array of external plugins for TinyMCE in the form 'plugin_name' => 'url'.
+	    It adds the plugin's name to TinyMCE's plugins init and the call to PluginManager to load the plugin.
+	    The url should be absolute and should include the js file name to be loaded. Example:
+	    array( 'myplugin' => 'http://my-site.com/wp-content/plugins/myfolder/mce_plugin.js' )
+	    If the plugin uses a button, it should be added with one of the "$mce_buttons" filters.
+	    */
+	    $mce_external_plugins = apply_filters('mce_external_plugins', array());
+	    
+	    $ext_plugins = '';
+	    if ( ! empty($mce_external_plugins) ) {
+		
+		/*
+		The following filter loads external language files for TinyMCE plugins.
+		It takes an associative array 'plugin_name' => 'path', where path is the
+		include path to the file. The language file should follow the same format as
+		/tinymce/langs/wp-langs.php and should define a variable $strings that
+		holds all translated strings.
+		When this filter is not used, the function will try to load {mce_locale}.js.
+		If that is not found, en.js will be tried next.
+		*/
+		$mce_external_languages = apply_filters('mce_external_languages', array());
+		$loaded_langs = array();
+		$strings = '';
+		if ( ! empty($mce_external_languages) ) {
+		    foreach ( $mce_external_languages as $name => $path ) {
+			if ( @is_file($path) && @is_readable($path) ) {
+			    include_once($path);
+			    $ext_plugins .= $strings . "\n";
+			    $loaded_langs[] = $name;
+			}
+		    }
+		}
+		
+		foreach ( $mce_external_plugins as $name => $url ) {
+		    if ( is_ssl() ) $url = str_replace('http://', 'https://', $url);
+		    $plugins[] = '-' . $name;
+		    $plugurl = dirname($url);
+		    $strings = $str1 = $str2 = '';
+		    if ( ! in_array($name, $loaded_langs) ) {
+		        $path = str_replace( WP_PLUGIN_URL, '', $plugurl );
+		        $path = WP_PLUGIN_DIR . $path . '/langs/';
+		        if ( function_exists('realpath') )
+			    $path = trailingslashit( realpath($path) );
+			if ( @is_file($path . $mce_locale . '.js') )
+			    $strings .= @file_get_contents($path . $mce_locale . '.js') . "\n";
+			if ( @is_file($path . $mce_locale . '_dlg.js') )
+			    $strings .= @file_get_contents($path . $mce_locale . '_dlg.js') . "\n";
+			if ( 'en' != $mce_locale && empty($strings) ) {
+			    if ( @is_file($path . 'en.js') ) {
+			        $str1 = @file_get_contents($path . 'en.js');
+			        $strings .= preg_replace( '/([\'"])en\./', '$1' . $mce_locale . '.', $str1, 1 ) . "\n";
+			    }
+			    if ( @is_file($path . 'en_dlg.js') ) {
+			        $str2 = @file_get_contents($path . 'en_dlg.js');
+			        $strings .= preg_replace( '/([\'"])en\./', '$1' . $mce_locale . '.', $str2, 1 ) . "\n";
+			    }
+			}
+			if ( ! empty($strings) )
+			    $ext_plugins .= "\n" . $strings . "\n";
+		    }
+		    $ext_plugins .= 'tinyMCEPreInit.load_ext("' . $plugurl . '", "' . $mce_locale . '");' . "\n";
+		    $ext_plugins .= 'tinymce.PluginManager.load("' . $name . '", "' . $url . '");' . "\n";
+		}
+	    }
+	}
+	
+	if ( $teeny ) {
+	    $mce_buttons = apply_filters( 'teeny_mce_buttons', array('bold, italic, underline, blockquote, separator, strikethrough, bullist, numlist,justifyleft, justifycenter, justifyright, undo, redo, link, unlink, fullscreen') );
+	    $mce_buttons = implode($mce_buttons, ',');
+	    $mce_buttons_2 = $mce_buttons_3 = $mce_buttons_4 = '';
+	} else {
+	    $mce_buttons = apply_filters('mce_buttons', array('bold', 'italic', 'strikethrough', '|', 'bullist', 'numlist', 'blockquote', '|', 'justifyleft', 'justifycenter', 'justifyright', '|', 'link', 'unlink', 'wp_more', '|', 'spellchecker', 'fullscreen', 'wp_adv' ));
+	    $mce_buttons = implode($mce_buttons, ',');
+	    $mce_buttons_2 = array( 'formatselect', 'underline', 'justifyfull', 'forecolor', '|', 'pastetext', 'pasteword', 'removeformat', '|', 'charmap', '|', 'outdent', 'indent', '|', 'undo', 'redo', 'wp_help' );
+	    $mce_buttons_2 = apply_filters('mce_buttons_2', $mce_buttons_2);
+	    $mce_buttons_2 = implode($mce_buttons_2, ',');
+	    $mce_buttons_3 = apply_filters('mce_buttons_3', array());
+	    $mce_buttons_3 = implode($mce_buttons_3, ',');
+	    $mce_buttons_4 = apply_filters('mce_buttons_4', array());
+	    $mce_buttons_4 = implode($mce_buttons_4, ',');
+	}
+	$no_captions = (bool) apply_filters( 'disable_captions', '' );
+
+	// TinyMCE init settings
+	$initArray = array (
+	    'mode' => 'specific_textareas',
+	    'editor_selector' => 'theEditor',
+	    'width' => '100%',
+	    'theme' => 'advanced',
+	    'skin' => 'wp_theme',
+	    'theme_advanced_buttons1' => $mce_buttons,
+	    'theme_advanced_buttons2' => $mce_buttons_2,
+	    'theme_advanced_buttons3' => $mce_buttons_3,
+	    'theme_advanced_buttons4' => $mce_buttons_4,
+	    'language' => $mce_locale,
+	    'spellchecker_languages' => $mce_spellchecker_languages,
+	    'theme_advanced_toolbar_location' => 'top',
+	    'theme_advanced_toolbar_align' => 'left',
+	    'theme_advanced_statusbar_location' => 'bottom',
+	    'theme_advanced_resizing' => true,
+	    'theme_advanced_resize_horizontal' => false,
+	    'dialog_type' => 'modal',
+	    'formats' => "{
+		alignleft : [
+		    {selector : 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li', styles : {textAlign : 'left'}},
+		    {selector : 'img,table', classes : 'alignleft'}
+		],
+		aligncenter : [
+		    {selector : 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li', styles : {textAlign : 'center'}},
+		    {selector : 'img,table', classes : 'aligncenter'}
+		],
+		alignright : [
+		    {selector : 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li', styles : {textAlign : 'right'}},
+		    {selector : 'img,table', classes : 'alignright'}
+		],
+		strikethrough : {inline : 'del'}
+	    }",
+	    'relative_urls' => false,
+	    'remove_script_host' => false,
+	    'convert_urls' => false,
+	    'apply_source_formatting' => false,
+	    'remove_linebreaks' => true,
+	    'gecko_spellcheck' => true,
+	    'entities' => '38,amp,60,lt,62,gt',
+	    'accessibility_focus' => true,
+	    'tabfocus_elements' => 'major-publishing-actions',
+	    'media_strict' => false,
+	    'paste_remove_styles' => true,
+	    'paste_remove_spans' => true,
+	    'paste_strip_class_attributes' => 'all',
+	    'paste_text_use_dialog' => true,
+	    'wpeditimage_disable_captions' => $no_captions,
+	    'plugins' => implode( ',', $plugins ),
+	);
+
+	if ( ! empty( $editor_styles ) && is_array( $editor_styles ) ) {
+	    $mce_css = array();
+	    $style_uri = get_stylesheet_directory_uri();
+	    if ( ! is_child_theme() ) {
+	        foreach ( $editor_styles as $file )
+	            $mce_css[] = "$style_uri/$file";
+	    } else {
+		$style_dir    = get_stylesheet_directory();
+		$template_uri = get_template_directory_uri();
+		$template_dir = get_template_directory();
+		foreach ( $editor_styles as $file ) {
+		    if ( file_exists( "$template_dir/$file" ) )
+			$mce_css[] = "$template_uri/$file";
+		    if ( file_exists( "$style_dir/$file" ) )
+		        $mce_css[] = "$style_uri/$file";
+		}
+	    }
+	    $mce_css = implode( ',', $mce_css );
+	} else {
+	    $mce_css = '';
+	}
+	$mce_css = trim( apply_filters( 'mce_css', $mce_css ), ' ,' );
+	if ( ! empty($mce_css) )
+	    $initArray['content_css'] = $mce_css;
+	if ( is_array($settings) )
+	    $initArray = array_merge($initArray, $settings);
+	// For people who really REALLY know what they're doing with TinyMCE
+	// You can modify initArray to add, remove, change elements of the config before tinyMCE.init
+	// Setting "valid_elements", "invalid_elements" and "extended_valid_elements" can be done through "tiny_mce_before_init".
+	// Best is to use the default cleanup by not specifying valid_elements, as TinyMCE contains full set of XHTML 1.0.
+	if ( $teeny ) {
+	    $initArray = apply_filters('teeny_mce_before_init', $initArray);
+	} else {
+	    $initArray = apply_filters('tiny_mce_before_init', $initArray);
+	}
+	if ( empty($initArray['theme_advanced_buttons3']) && !empty($initArray['theme_advanced_buttons4']) ) {
+	    $initArray['theme_advanced_buttons3'] = $initArray['theme_advanced_buttons4'];
+	    $initArray['theme_advanced_buttons4'] = '';
+	}
+	if ( ! isset($concatenate_scripts) )
+	    script_concat_settings();
+	$language = $initArray['language'];
+	$compressed = $compress_scripts && $concatenate_scripts && isset($_SERVER['HTTP_ACCEPT_ENCODING'])
+	    && false !== strpos( strtolower($_SERVER['HTTP_ACCEPT_ENCODING']), 'gzip');
+	/**
+	 * Deprecated
+	 *
+	 * The tiny_mce_version filter is not needed since external plugins are loaded directly by TinyMCE.
+	 * These plugins can be refreshed by appending query string to the URL passed to mce_external_plugins filter.
+	 * If the plugin has a popup dialog, a query string can be added to the button action that opens it (in the plugin's code).
+	 */
+	$version = apply_filters('tiny_mce_version', '');
+	$version = 'ver=' . $tinymce_version . $version;
+	if ( 'en' != $language )
+	    include_once(ABSPATH . WPINC . '/js/tinymce/langs/wp-langs.php');
+	
+	$mce_options = '';
+	foreach ( $initArray as $k => $v ) {
+	    if ( is_bool($v) ) {
+		$val = $v ? 'true' : 'false';
+		$mce_options .= $k . ':' . $val . ', ';
+		continue;
+	    } elseif ( !empty($v) && is_string($v) && ( '{' == $v{0} || '[' == $v{0} ) ) {
+		$mce_options .= $k . ':' . $v . ', ';
+		continue;
+	    }
+	    $mce_options .= $k . ':"' . $v . '", ';
+	}
+	
+	$mce_options = rtrim( trim($mce_options), '\n\r,' ); ?>
+	
+	<script type="text/javascript">
+	/* <![CDATA[ */
+	tinyMCEPreInit = {
+		base : "<?php echo $baseurl; ?>",
+		suffix : "",
+		query : "<?php echo $version; ?>",
+		mceInit : {<?php echo $mce_options; ?>},
+		load_ext : function(url,lang){var sl=tinymce.ScriptLoader;sl.markDone(url+'/langs/'+lang+'.js');sl.markDone(url+'/langs/'+lang+'_dlg.js');}
+	};
+	/* ]]> */
+	</script>
+    <?php
+	if ( $compressed )
+	    echo "<script type='text/javascript' src='$baseurl/wp-tinymce.php?c=1&amp;$version'></script>\n";
+	else
+	    echo "<script type='text/javascript' src='$baseurl/tiny_mce.js?$version'></script>\n";
+	
+	if ( 'en' != $language && isset($lang) )
+	    echo "<script type='text/javascript'>\n$lang\n</script>\n";
+	else
+	    echo "<script type='text/javascript' src='$baseurl/langs/wp-langs-en.js?$version'></script>\n";
+    ?>
+	<script type="text/javascript">
+	/* <![CDATA[ */
+	<?php
+	    if ( $ext_plugins )
+		echo "$ext_plugins\n";
+	
+	    if ( ! $compressed ) {
+	?>
+	(function(){var t=tinyMCEPreInit,sl=tinymce.ScriptLoader,ln=t.mceInit.language,th=t.mceInit.theme,pl=t.mceInit.plugins;sl.markDone(t.base+'/langs/'+ln+'.js');sl.markDone(t.base+'/themes/'+th+'/langs/'+ln+'.js');sl.markDone(t.base+'/themes/'+th+'/langs/'+ln+'_dlg.js');tinymce.each(pl.split(','),function(n){if(n&&n.charAt(0)!='-'){sl.markDone(t.base+'/plugins/'+n+'/langs/'+ln+'.js');sl.markDone(t.base+'/plugins/'+n+'/langs/'+ln+'_dlg.js');}});})();
+	<?php } ?>
+	tinyMCE.init(tinyMCEPreInit.mceInit);
+	/* ]]> */
+	</script>
+    <?php
+
+	// Load additional inline scripts based on active plugins.
+	if ( in_array( 'wpdialogs', $plugins ) ) {
+	    wp_print_scripts( array( 'wpdialogs-popup' ) );
+	    wp_print_styles('wp-jquery-ui-dialog');
+	}
+	if ( in_array( 'wplink', $plugins ) ) {
+	    require_once ABSPATH . 'wp-admin/includes/internal-linking.php';
+	    add_action('tiny_mce_preload_dialogs', 'wp_link_dialog');
+	    wp_print_scripts('wplink');
+	    wp_print_styles('wplink');
+	}
+    }
+    
+    function tiny_mce_preload_dialogs() { ?>
+	<div id="preloaded-dialogs" style="display:none;">
+    <?php do_action('tiny_mce_preload_dialogs'); ?>
+	</div>
+    <?php
     }
 }
 

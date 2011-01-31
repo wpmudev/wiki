@@ -65,3 +65,42 @@
     margin: 0.2em 0.5em;
 }
 
+.incsub_wiki_meta_box {
+    clear: left;
+}
+
+.incsub_wiki_br_roles {
+    display: none;
+}
+
+.incsub_wiki_label_roles {
+    margin-right: 10px;
+}
+
+.incsub_wiki_title {
+    border-style: solid;
+    border-width: 1px;
+    font-size: 1.7em;
+    line-height: 100%;
+    outline: medium none;
+    padding: 3px 4px;
+    width: 100%;
+}
+
+#content .wp_themeSkin tr td {
+    padding: 0;
+}
+
+.wp_themeSkin tr.mceFirst td.mceToolbar {
+    background: url("../images/ed-bg.gif") repeat-x scroll left top #DFDFDF;
+    border-color: #DFDFDF;
+}
+
+.wp_themeSkin .mceButton {
+    color: #B2B2B2;
+}
+
+#content table.mceToolbar {
+    width: auto;
+    margin: 0 2px 2px;
+}
