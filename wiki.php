@@ -287,7 +287,7 @@ class Wiki {
 	    else
 		wp_die( __('You are not allowed to edit this post.' ));
 	}
-
+	
 	// Autosave shouldn't save too soon after a real save
 	if ( 'autosave' == $post_data['action'] ) {
 	    $post =& get_post( $post_ID );
@@ -299,6 +299,7 @@ class Wiki {
 	}
 	
 	$post_data = $this->_translate_postdata( true, $post_data );
+	$post_data['post_status'] = 'publish';
 	if ( is_wp_error($post_data) )
 	    wp_die( $post_data->get_error_message() );
 	if ( 'autosave' != $post_data['action']  && 'auto-draft' == $post_data['post_status'] )
@@ -332,7 +333,7 @@ class Wiki {
 		}
 	    }
 	}
-	
+	// print_r($post_data); exit();
 	// Meta Stuff
 	if ( isset($post_data['meta']) && $post_data['meta'] ) {
 	    foreach ( $post_data['meta'] as $key => $value ) {
@@ -417,7 +418,7 @@ class Wiki {
 		
 		if ( empty($post->ID) )
 		    wp_die( __('You attempted to edit an item that doesn&#8217;t exist. Perhaps it was deleted?') );
-		    
+		
 		if ( !current_user_can($post_type_object->cap->edit_post, $post_id) )
 		    wp_die( __('You are not allowed to edit this item.') );
 		    
@@ -681,7 +682,7 @@ class Wiki {
      * @param string $post_type A post type string, defaults to 'post'.
      * @return object stdClass object containing all the default post data as attributes
      */
-    function get_default_post_to_edit( $post_type = 'post', $create_in_db = false ) {
+    function get_default_post_to_edit( $post_type = 'post', $create_in_db = false, $parent_id = 0 ) {
 	global $wpdb;
 
 	$post_title = '';
@@ -701,10 +702,13 @@ class Wiki {
 	    $old_posts = $wpdb->get_col( "SELECT ID FROM $wpdb->posts WHERE post_status = 'auto-draft' AND DATE_SUB( NOW(), INTERVAL 7 DAY ) > post_date" );
 	    foreach ( (array) $old_posts as $delete )
 		wp_delete_post( $delete, true ); // Force delete
-	    $post_id = wp_insert_post( array( 'post_title' => __( 'Auto Draft' ), 'post_type' => $post_type, 'post_status' => 'auto-draft' ) );
+	    $post_id = wp_insert_post( array( 'post_parent' => $parent_id, 'post_title' => __( 'Auto Draft' ), 'post_type' => $post_type, 'post_status' => 'auto-draft' ) );
 	    $post = get_post( $post_id );
 	    if ( current_theme_supports( 'post-formats' ) && post_type_supports( $post->post_type, 'post-formats' ) && get_option( 'default_post_format' ) )
 		set_post_format( $post, get_option( 'default_post_format' ) );
+	    // Copy wiki privileges
+	    $privileges = get_post_meta($post->post_parent, 'incsub_wiki_privileges');
+	    update_post_meta($post->ID, 'incsub_wiki_privileges', $privileges[0]);
 	} else {
 	    $post->ID = 0;
 	    $post->post_author = '';
@@ -805,7 +809,7 @@ class Wiki {
 	$xcontent  = '<h3>'.__('Edit', $this->translation_domain).'</h3>';
 	$xcontent .= '<form action="'.get_permalink().'" method="post">';
 	if (isset($_REQUEST['eaction']) && $_REQUEST['eaction'] == 'create') {
-	    $edit_post = $this->get_default_post_to_edit($post->post_type, true);
+	    $edit_post = $this->get_default_post_to_edit($post->post_type, true, $post->ID);
 	    $xcontent .= '<input type="hidden" name="parent_id" id="parent_id" value="'.$post->ID.'" />';
 	    $xcontent .= '<input type="hidden" name="original_publish" id="original_publish" value="Publish" />';
 	    $xcontent .= '<input type="hidden" name="publish" id="publish" value="Publish" />';
@@ -815,10 +819,12 @@ class Wiki {
 	    $xcontent .= '<input type="hidden" name="original_publish" id="original_publish" value="Update" />';
 	}
 	
+	$xcontent .= '<input type="hidden" name="post_type" id="post_type" value="'.$edit_post->post_type.'" />';
 	$xcontent .= '<input type="hidden" name="post_ID" id="wiki_id" value="'.$edit_post->ID.'" />';
+	$xcontent .= '<input type="hidden" name="post_status" id="wiki_id" value="published" />';
 	$xcontent .= '<input type="hidden" name="action" id="wiki_action" value="editpost" />';
 	$xcontent .= '<div><input type="text" name="post_title" id="wiki_title" value="'.$edit_post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
-	$xcontent .= '<div><textarea tabindex="1" name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea></div>';
+	$xcontent .= '<div><textarea tabindex="2" name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea></div>';
 	$xcontent .= '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_{$edit_post->ID}").'" />';
 	
 	if (is_user_logged_in()) {
@@ -1045,7 +1051,7 @@ class Wiki {
     }
     
     function user_has_cap($allcaps, $caps = null, $args = null) {
-	global $current_user, $blog_id;
+	global $current_user, $blog_id, $post;
 	
 	$capable = false;
 	
@@ -1059,7 +1065,6 @@ class Wiki {
 	    
 	    foreach ($caps as $cap) {
 		$capable = false;
-		
 		switch ($cap) {
 		    case 'read_wiki':
 			$capable = true;
@@ -1068,13 +1073,15 @@ class Wiki {
 		    case 'edit_published_wikis':
 		    case 'edit_wiki':
 			if (isset($args[2])) {
-			    $post = get_post($args[2]);
+			    $edit_post = get_post($args[2]);
 			} else if (isset($_REQUEST['post_ID'])) {
-			    $post = get_post($_REQUEST['post_ID']);
+			    $edit_post = get_post($_REQUEST['post_ID']);
+			} else {
+			    $edit_post = $post;
 			}
 			
-			if ($post) {			    
-			    $meta = get_post_custom($args[2]);
+			if ($edit_post) {
+			    $meta = get_post_custom($edit_post->ID);
 			    $current_privileges = unserialize($meta["incsub_wiki_privileges"][0]);
 			    
 			    if (!$current_privileges) {
