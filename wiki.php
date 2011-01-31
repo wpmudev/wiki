@@ -382,14 +382,6 @@ class Wiki {
 	global $post;
 	
 	switch ($_REQUEST['action']) {
-	    case 'createpost':
-		if (wp_verify_nonce($_POST['_wpnonce'], "wiki-editpost_new")) {
-		    $post_id = $this->edit_post();
-		    wp_redirect(get_permalink($post_id).'?action=edit');
-		} else {
-		   wp_redirect(get_permalink().'?action=edit');
-		}
-		exit();
 	    case 'editpost':
 		if (wp_verify_nonce($_POST['_wpnonce'], "wiki-editpost_{$_POST['post_ID']}")) {
 		    $post_id = $this->edit_post($_POST);
@@ -680,7 +672,66 @@ class Wiki {
 	
 	return $new_content;
     }
-    
+
+    /**
+     * Default post information to use when populating the "Write Post" form.
+     *
+     * @since 2.0.0
+     *
+     * @param string $post_type A post type string, defaults to 'post'.
+     * @return object stdClass object containing all the default post data as attributes
+     */
+    function get_default_post_to_edit( $post_type = 'post', $create_in_db = false ) {
+	global $wpdb;
+
+	$post_title = '';
+	if ( !empty( $_REQUEST['post_title'] ) )
+	    $post_title = esc_html( stripslashes( $_REQUEST['post_title'] ));
+
+	$post_content = '';
+	if ( !empty( $_REQUEST['content'] ) )
+	    $post_content = esc_html( stripslashes( $_REQUEST['content'] ));
+
+	$post_excerpt = '';
+	if ( !empty( $_REQUEST['excerpt'] ) )
+	    $post_excerpt = esc_html( stripslashes( $_REQUEST['excerpt'] ));
+
+	if ( $create_in_db ) {
+	    // Cleanup old auto-drafts more than 7 days old
+	    $old_posts = $wpdb->get_col( "SELECT ID FROM $wpdb->posts WHERE post_status = 'auto-draft' AND DATE_SUB( NOW(), INTERVAL 7 DAY ) > post_date" );
+	    foreach ( (array) $old_posts as $delete )
+		wp_delete_post( $delete, true ); // Force delete
+	    $post_id = wp_insert_post( array( 'post_title' => __( 'Auto Draft' ), 'post_type' => $post_type, 'post_status' => 'auto-draft' ) );
+	    $post = get_post( $post_id );
+	    if ( current_theme_supports( 'post-formats' ) && post_type_supports( $post->post_type, 'post-formats' ) && get_option( 'default_post_format' ) )
+		set_post_format( $post, get_option( 'default_post_format' ) );
+	} else {
+	    $post->ID = 0;
+	    $post->post_author = '';
+	    $post->post_date = '';
+	    $post->post_date_gmt = '';
+	    $post->post_password = '';
+	    $post->post_type = $post_type;
+	    $post->post_status = 'draft';
+	    $post->to_ping = '';
+	    $post->pinged = '';
+	    $post->comment_status = get_option( 'default_comment_status' );
+	    $post->ping_status = get_option( 'default_ping_status' );
+	    $post->post_pingback = get_option( 'default_pingback_flag' );
+	    $post->post_category = get_option( 'default_category' );
+	    $post->page_template = 'default';
+	    $post->post_parent = 0;
+	    $post->menu_order = 0;
+	}
+
+	$post->post_content = apply_filters( 'default_content', $post_content, $post );
+	$post->post_title   = apply_filters( 'default_title',   $post_title, $post   );
+	$post->post_excerpt = apply_filters( 'default_excerpt', $post_excerpt, $post );
+	$post->post_name = '';
+
+	return $post;
+    }
+
     function enqueue_comment_hotkeys_js() {
         if ( 'true' == get_user_option( 'comment_shortcuts' ) )
             wp_enqueue_script( 'jquery-table-hotkeys' );
@@ -754,22 +805,22 @@ class Wiki {
 	$xcontent  = '<h3>'.__('Edit', $this->translation_domain).'</h3>';
 	$xcontent .= '<form action="'.get_permalink().'" method="post">';
 	if (isset($_REQUEST['eaction']) && $_REQUEST['eaction'] == 'create') {
-	    $xcontent .= '<input type="hidden" name="post_ID" id="wiki_id" value="0" />';
+	    $edit_post = $this->get_default_post_to_edit($post->post_type, true);
 	    $xcontent .= '<input type="hidden" name="parent_id" id="parent_id" value="'.$post->ID.'" />';
-	    $xcontent .= '<input type="hidden" name="action" id="wiki_action" value="createpost" />';
-	    $xcontent .= '<div><input type="text" name="post_title" id="wiki_title" value="" class="incsub_wiki_title" size="30" /></div>';
-	    $xcontent .= '<div><textarea name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" ></textarea></div>';
 	    $xcontent .= '<input type="hidden" name="original_publish" id="original_publish" value="Publish" />';
-	    $xcontent .= '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_new").'" />';
+	    $xcontent .= '<input type="hidden" name="publish" id="publish" value="Publish" />';
 	} else {
-	    $xcontent .= '<input type="hidden" name="post_ID" id="wiki_id" value="'.$post->ID.'" />';
-	    $xcontent .= '<input type="hidden" name="parent_id" id="parent_id" value="'.$post->post_parent.'" />';
-	    $xcontent .= '<input type="hidden" name="action" id="wiki_action" value="editpost" />';
-	    $xcontent .= '<div><input type="text" name="post_title" id="wiki_title" value="'.$post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
-	    $xcontent .= '<div><textarea name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$post->post_content.'</textarea></div>';
+	    $edit_post = $post;
+	    $xcontent .= '<input type="hidden" name="parent_id" id="parent_id" value="'.$edit_post->post_parent.'" />';
 	    $xcontent .= '<input type="hidden" name="original_publish" id="original_publish" value="Update" />';
-	    $xcontent .= '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_$post->ID").'" />';
 	}
+	
+	$xcontent .= '<input type="hidden" name="post_ID" id="wiki_id" value="'.$edit_post->ID.'" />';
+	$xcontent .= '<input type="hidden" name="action" id="wiki_action" value="editpost" />';
+	$xcontent .= '<div><input type="text" name="post_title" id="wiki_title" value="'.$edit_post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
+	$xcontent .= '<div><textarea tabindex="1" name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea></div>';
+	$xcontent .= '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_{$edit_post->ID}").'" />';
+	
 	if (is_user_logged_in()) {
 	    $xcontent .= $this->get_meta_form();
 	}
