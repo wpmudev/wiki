@@ -67,6 +67,7 @@ class Wiki {
 	
         // Actions
 	add_action('init', array(&$this, 'init'), 0);
+	add_action('init', array(&$this, 'post_action'));
 	add_action('wp_head', array(&$this, 'output_css'));
 	add_action('wp_head', array(&$this, 'output_js'), 0);
     	
@@ -84,7 +85,7 @@ class Wiki {
 	
 	add_filter('post_type_link', array(&$this, 'post_type_link'), 10, 3);
 	add_filter('name_save_pre', array(&$this, 'name_save'));
-	add_filter('the_content', array(&$this, 'the_content'));
+	// add_filter('the_content', array(&$this, 'the_content'));
 	add_filter('role_has_cap', array(&$this, 'role_has_cap'), 10, 3);
 	add_filter('user_has_cap', array(&$this, 'user_has_cap'), 10, 3);
 	
@@ -148,6 +149,258 @@ class Wiki {
 	}
 	return $open;
     }
+    
+    /**
+     * Rename $_POST data from form names to DB post columns.
+     *
+     * Manipulates $_POST directly.
+     *
+     * @package WordPress
+     * @since 2.6.0
+     *
+     * @param bool $update Are we updating a pre-existing post?
+     * @param array $post_data Array of post data. Defaults to the contents of $_POST.
+     * @return object|bool WP_Error on failure, true on success.
+     */
+    function _translate_postdata( $update = false, $post_data = null ) {
+	if ( empty($post_data) )
+		$post_data = &$_POST;
+
+	if ( $update )
+		$post_data['ID'] = (int) $post_data['post_ID'];
+	$post_data['post_content'] = isset($post_data['content']) ? $post_data['content'] : '';
+	$post_data['post_excerpt'] = isset($post_data['excerpt']) ? $post_data['excerpt'] : '';
+	$post_data['post_parent'] = isset($post_data['parent_id'])? $post_data['parent_id'] : '';
+	if ( isset($post_data['trackback_url']) )
+		$post_data['to_ping'] = $post_data['trackback_url'];
+
+	if ( !isset($post_data['user_ID']) )
+		$post_data['user_ID'] = $GLOBALS['user_ID'];
+
+	if (!empty ( $post_data['post_author_override'] ) ) {
+		$post_data['post_author'] = (int) $post_data['post_author_override'];
+	} else {
+		if (!empty ( $post_data['post_author'] ) ) {
+			$post_data['post_author'] = (int) $post_data['post_author'];
+		} else {
+			$post_data['post_author'] = (int) $post_data['user_ID'];
+		}
+	}
+
+	$ptype = get_post_type_object( $post_data['post_type'] );
+	if ( isset($post_data['user_ID']) && ($post_data['post_author'] != $post_data['user_ID']) ) {
+		if ( !current_user_can( $ptype->cap->edit_others_posts ) ) {
+			if ( 'page' == $post_data['post_type'] ) {
+				return new WP_Error( 'edit_others_pages', $update ?
+					__( 'You are not allowed to edit pages as this user.' ) :
+					__( 'You are not allowed to create pages as this user.' )
+				);
+			} else {
+				return new WP_Error( 'edit_others_posts', $update ?
+					__( 'You are not allowed to edit posts as this user.' ) :
+					__( 'You are not allowed to post as this user.' )
+				);
+			}
+		}
+	}
+
+	// What to do based on which button they pressed
+	if ( isset($post_data['saveasdraft']) && '' != $post_data['saveasdraft'] )
+		$post_data['post_status'] = 'draft';
+	if ( isset($post_data['saveasprivate']) && '' != $post_data['saveasprivate'] )
+		$post_data['post_status'] = 'private';
+	if ( isset($post_data['publish']) && ( '' != $post_data['publish'] ) && ( !isset($post_data['post_status']) || $post_data['post_status'] != 'private' ) )
+		$post_data['post_status'] = 'publish';
+	if ( isset($post_data['advanced']) && '' != $post_data['advanced'] )
+		$post_data['post_status'] = 'draft';
+	if ( isset($post_data['pending']) && '' != $post_data['pending'] )
+		$post_data['post_status'] = 'pending';
+
+	if ( isset( $post_data['ID'] ) )
+		$post_id = $post_data['ID'];
+	else
+		$post_id = false;
+	$previous_status = $post_id ? get_post_field( 'post_status', $post_id ) : false;
+
+	// Posts 'submitted for approval' present are submitted to $_POST the same as if they were being published.
+	// Change status from 'publish' to 'pending' if user lacks permissions to publish or to resave published posts.
+	if ( isset($post_data['post_status']) && ('publish' == $post_data['post_status'] && !current_user_can( $ptype->cap->publish_posts )) )
+		if ( $previous_status != 'publish' || !current_user_can( 'edit_post', $post_id ) )
+			$post_data['post_status'] = 'pending';
+
+	if ( ! isset($post_data['post_status']) )
+		$post_data['post_status'] = $previous_status;
+
+	if (!isset( $post_data['comment_status'] ))
+		$post_data['comment_status'] = 'closed';
+
+	if (!isset( $post_data['ping_status'] ))
+		$post_data['ping_status'] = 'closed';
+
+	foreach ( array('aa', 'mm', 'jj', 'hh', 'mn') as $timeunit ) {
+		if ( !empty( $post_data['hidden_' . $timeunit] ) && $post_data['hidden_' . $timeunit] != $post_data[$timeunit] ) {
+			$post_data['edit_date'] = '1';
+			break;
+		}
+	}
+
+	if ( !empty( $post_data['edit_date'] ) ) {
+		$aa = $post_data['aa'];
+		$mm = $post_data['mm'];
+		$jj = $post_data['jj'];
+		$hh = $post_data['hh'];
+		$mn = $post_data['mn'];
+		$ss = $post_data['ss'];
+		$aa = ($aa <= 0 ) ? date('Y') : $aa;
+		$mm = ($mm <= 0 ) ? date('n') : $mm;
+		$jj = ($jj > 31 ) ? 31 : $jj;
+		$jj = ($jj <= 0 ) ? date('j') : $jj;
+		$hh = ($hh > 23 ) ? $hh -24 : $hh;
+		$mn = ($mn > 59 ) ? $mn -60 : $mn;
+		$ss = ($ss > 59 ) ? $ss -60 : $ss;
+		$post_data['post_date'] = sprintf( "%04d-%02d-%02d %02d:%02d:%02d", $aa, $mm, $jj, $hh, $mn, $ss );
+		$post_data['post_date_gmt'] = get_gmt_from_date( $post_data['post_date'] );
+	}
+
+	return $post_data;
+    }
+    
+    /**
+     * Update an existing post with values provided in $_POST.
+     *
+     * @since 1.5.0
+     *
+     * @param array $post_data Optional.
+     * @return int Post ID.
+     */
+    function edit_post( $post_data = null ) {
+
+	if ( empty($post_data) )
+	    $post_data = &$_POST;
+	
+	$post_ID = (int) $post_data['post_ID'];
+	
+	$ptype = get_post_type_object($post_data['post_type']);
+	if ( !current_user_can( $ptype->cap->edit_post, $post_ID ) ) {
+	    if ( 'page' == $post_data['post_type'] )
+		wp_die( __('You are not allowed to edit this page.' ));
+	    else
+		wp_die( __('You are not allowed to edit this post.' ));
+	}
+
+	// Autosave shouldn't save too soon after a real save
+	if ( 'autosave' == $post_data['action'] ) {
+	    $post =& get_post( $post_ID );
+	    $now = time();
+	    $then = strtotime($post->post_date_gmt . ' +0000');
+	    $delta = AUTOSAVE_INTERVAL / 2;
+	    if ( ($now - $then) < $delta )
+		return $post_ID;
+	}
+	
+	$post_data = $this->_translate_postdata( true, $post_data );
+	if ( is_wp_error($post_data) )
+	    wp_die( $post_data->get_error_message() );
+	if ( 'autosave' != $post_data['action']  && 'auto-draft' == $post_data['post_status'] )
+	    $post_data['post_status'] = 'draft';
+	
+	if ( isset($post_data['visibility']) ) {
+	    switch ( $post_data['visibility'] ) {
+		case 'public' :
+		    $post_data['post_password'] = '';
+		    break;
+		case 'password' :
+		    unset( $post_data['sticky'] );
+		    break;
+		case 'private' :
+		    $post_data['post_status'] = 'private';
+		    $post_data['post_password'] = '';
+		    unset( $post_data['sticky'] );
+		    break;
+	    }
+	}
+	
+	// Post Formats
+	if ( current_theme_supports( 'post-formats' ) && isset( $post_data['post_format'] ) ) {
+	    $formats = get_theme_support( 'post-formats' );
+	    if ( is_array( $formats ) ) {
+		$formats = $formats[0];
+		if ( in_array( $post_data['post_format'], $formats ) ) {
+		    set_post_format( $post_ID, $post_data['post_format'] );
+		} elseif ( '0' == $post_data['post_format'] ) {
+		    set_post_format( $post_ID, false );
+		}
+	    }
+	}
+	
+	// Meta Stuff
+	if ( isset($post_data['meta']) && $post_data['meta'] ) {
+	    foreach ( $post_data['meta'] as $key => $value ) {
+		if ( !$meta = get_post_meta_by_id( $key ) )
+		    continue;
+		if ( $meta->post_id != $post_ID )
+		    continue;
+		update_meta( $key, $value['key'], $value['value'] );
+	    }
+	}
+	
+	if ( isset($post_data['deletemeta']) && $post_data['deletemeta'] ) {
+	    foreach ( $post_data['deletemeta'] as $key => $value ) {
+		if ( !$meta = get_post_meta_by_id( $key ) )
+		    continue;
+		if ( $meta->post_id != $post_ID )
+		    continue;
+		delete_meta( $key );
+	    }
+	}
+	
+	// add_meta( $post_ID );
+	
+	update_post_meta( $post_ID, '_edit_last', $GLOBALS['current_user']->ID );
+	
+	wp_update_post( $post_data );
+	
+	// Reunite any orphaned attachments with their parent
+	if ( !$draft_ids = get_user_option( 'autosave_draft_ids' ) )
+	    $draft_ids = array();
+	if ( $draft_temp_id = (int) array_search( $post_ID, $draft_ids ) )
+	    _relocate_children( $draft_temp_id, $post_ID );
+	
+	$this->set_post_lock( $post_ID, $GLOBALS['current_user']->ID );
+	
+	if ( current_user_can( $ptype->cap->edit_others_posts ) ) {
+	    if ( ! empty( $post_data['sticky'] ) )
+		stick_post( $post_ID );
+	    else
+		unstick_post( $post_ID );
+	}
+	
+	return $post_ID;
+    }
+    
+    function post_action() {
+	global $post;
+	
+	switch ($_REQUEST['action']) {
+	    case 'createpost':
+		if (wp_verify_nonce($_POST['_wpnonce'], "wiki-editpost_new")) {
+		    $post_id = $this->edit_post();
+		    wp_redirect(get_permalink($post_id).'?action=edit');
+		} else {
+		   wp_redirect(get_permalink().'?action=edit');
+		}
+		exit();
+	    case 'editpost':
+		if (wp_verify_nonce($_POST['_wpnonce'], "wiki-editpost_{$_POST['post_ID']}")) {
+		    $post_id = $this->edit_post($_POST);
+		    wp_redirect(get_permalink($post_id).'?action=edit');
+		} else {
+		    wp_redirect(get_permalink().'?action=edit');
+		}
+		exit();
+		break;
+	}
+    }
 
     function theme($content) {
 	global $post;
@@ -195,8 +448,6 @@ class Wiki {
 		$post = $this->post_to_edit($post_id);
 		
 		$new_content .= $this->get_edit_form();
-		// $new_content .= $this->get_meta_boxes();
-		
 		break;
 	    case 'restore':
 		if ( !$revision = wp_get_post_revision( $revision_id ) )
@@ -336,9 +587,72 @@ class Wiki {
 		$new_content .= '<br class="clear" />';
 		$new_content .= '<div class="incsub_wiki_revisions">' . $this->list_post_revisions( $post, $args ) . '</div>';
 		$redirect = false;
-	    break;
+		break;
 	    default:
+		$top = "";
+		
+		$crumbs = array();
+		foreach($post->ancestors as $parent_pid) {
+		    $parent_post = get_post($parent_pid);
+		    
+		    $crumbs[] = '<a href="'.get_permalink($parent_pid).'" class="incsub_wiki_crumbs">'.$parent_post->post_title.'</a>';
+		}
+		
+		sort($crumbs);
+		
+		$top .= join(get_option("incsub_meta_seperator", " > "), $crumbs);
+		
+		$children = get_children('post_parent='.$post->ID.'&post_type=incsub_wiki');
+		
+		$crumbs = array();
+		foreach($children as $child) {
+		    $crumbs[] = '<a href="'.get_permalink($child->ID).'" class="incsub_wiki_crumbs">'.$child->post_title.'</a>';
+		}
+		
+		$bottom = "<h3>".__('Sub Wikis', $this->translation_domain) . "</h3> <ul><li>";
+		
+		$bottom .= join("</li><li>", $crumbs);
+		
+		if (count($crumbs) == 0) {
+		    $bottom = "";
+		} else {
+		    $bottom .= "</li></ul>";
+		}
+		
+		$revisions = wp_get_post_revisions($post->ID);
+		
+		if (current_user_can('edit_wiki')) {
+		    $bottom .= '<div class="incsub_wiki-meta">';
+		    if (is_array($revisions) && count($revisions) > 0) {
+			$revision = array_shift($revisions);
+		    }
+		    $bottom .= '</div>';
+		}
+		
+		$notification_meta = get_post_custom($post->ID, array('incsub_wiki_email_notification' => 'enabled'));
+		
+		if ($notification_meta['incsub_wiki_email_notification'][0] == 'enabled' && !$this->is_subscribed()) {
+		    if (is_user_logged_in()) {
+			    $bottom .= '<div class="incsub_wiki-subscribe"><a href="'.wp_nonce_url(add_query_arg(array('post_id' => $post->ID, 'subscribe' => 1)), "wiki-subscribe-wiki_$post->ID" ).'">'.__('Notify me of changes', $this->translation_domain).'</a></div>';
+		    } else {
+			if (!empty($_COOKIE['incsub_wiki_email'])) {
+			    $user_email = $_COOKIE['incsub_wiki_email'];
+			} else {
+			    $user_email = "";
+			}
+			$bottom .= '<div class="incsub_wiki-subscribe">'.
+			'<form action="" method="post">'.
+			'<label>'.__('E-mail', $this->translation_domain).': <input type="text" name="email" id="email" value="'.$user_email.'" /></label> &nbsp;'.
+			'<input type="hidden" name="post_id" id="post_id" value="'.$post->ID.'" />'.
+			'<input type="submit" name="subscribe" id="subscribe" value="'.__('Notify me of changes', $this->translation_domain).'" />'.
+			'<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-subscribe-wiki_$post->ID").'" />'.
+			'</form>'.
+			'</div>';
+		    }
+		}
+		$new_content  = '<div class="incsub_wiki_top">' . $top . '</div>'. $new_content;
 		$new_content .= '<div class="incsub_wiki_content">' . $content . '</div>';
+		$new_content .= '<div class="incsub_wiki_bottom">' . $bottom . '</div>';
 		$redirect = false;
 	}
 	
@@ -437,27 +751,39 @@ class Wiki {
     function get_edit_form() {
 	global $post;
 	
-	$content  = '<h3>'.__('Edit', $this->translation_domain).'</h3>';
-	$content .= '<form action="'.get_permalink().'" method="get">';
-	$content .= '<input type="hidden" name="wiki_id" id="wiki_id" value="'.$post->ID.'" />';
-	$content .= '<input type="hidden" name="parent_id" id="parent_id" value="'.$post->post_parent.'" />';
-	$content .= '<input type="hidden" name="action" id="wiki_action" value="edit" />';
-	$content .= '<div><input type="text" name="wiki_title" id="wiki_title" value="'.$post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
-	$content .= '<div><textarea name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$post->post_content.'</textarea></div>';
-	if (is_user_logged_in()) {
-	    $content .= $this->get_meta_form();
+	$xcontent  = '<h3>'.__('Edit', $this->translation_domain).'</h3>';
+	$xcontent .= '<form action="'.get_permalink().'" method="post">';
+	if (isset($_REQUEST['eaction']) && $_REQUEST['eaction'] == 'create') {
+	    $xcontent .= '<input type="hidden" name="post_ID" id="wiki_id" value="0" />';
+	    $xcontent .= '<input type="hidden" name="parent_id" id="parent_id" value="'.$post->ID.'" />';
+	    $xcontent .= '<input type="hidden" name="action" id="wiki_action" value="createpost" />';
+	    $xcontent .= '<div><input type="text" name="post_title" id="wiki_title" value="" class="incsub_wiki_title" size="30" /></div>';
+	    $xcontent .= '<div><textarea name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" ></textarea></div>';
+	    $xcontent .= '<input type="hidden" name="original_publish" id="original_publish" value="Publish" />';
+	    $xcontent .= '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_new").'" />';
+	} else {
+	    $xcontent .= '<input type="hidden" name="post_ID" id="wiki_id" value="'.$post->ID.'" />';
+	    $xcontent .= '<input type="hidden" name="parent_id" id="parent_id" value="'.$post->post_parent.'" />';
+	    $xcontent .= '<input type="hidden" name="action" id="wiki_action" value="editpost" />';
+	    $xcontent .= '<div><input type="text" name="post_title" id="wiki_title" value="'.$post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
+	    $xcontent .= '<div><textarea name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$post->post_content.'</textarea></div>';
+	    $xcontent .= '<input type="hidden" name="original_publish" id="original_publish" value="Update" />';
+	    $xcontent .= '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_$post->ID").'" />';
 	}
-	$content .= '<div class="incsub_wiki_clear">';
-	$content .= '<input type="submit" name="save" id="btn_save" value="'.__('Save', $this->translation_domain).'" />&nbsp;';
-	$content .= '<a href="'.get_permalink().'?action=edit">'.__('Cancel', $this->translation_domain).'</a>';
-	$content .= '</div>';
-	$content .= '</form>';
+	if (is_user_logged_in()) {
+	    $xcontent .= $this->get_meta_form();
+	}
+	$xcontent .= '<div class="incsub_wiki_clear">';
+	$xcontent .= '<input type="submit" name="save" id="btn_save" value="'.__('Save', $this->translation_domain).'" />&nbsp;';
+	$xcontent .= '<a href="'.get_permalink().'?action=edit">'.__('Cancel', $this->translation_domain).'</a>';
+	$xcontent .= '</div>';
+	$xcontent .= '</form>';
 	
 	$wiki_admin = new WikiAdmin();
 	
 	$wiki_admin->tiny_mce(true, array("editor_selector" => "incusb_wiki_tinymce"));
 	
-	return $content;
+	return $xcontent;
     }
     
     function get_meta_form() {
@@ -902,78 +1228,6 @@ class Wiki {
     
     function output_js() {
 	wp_enqueue_script('utils');
-    }
-
-    function the_content($content) {
-	global $post;
-	
-	if ($post->post_type != 'incsub_wiki') {
-	    return $content;
-	}
-	
-	$top = "";
-	
-	$crumbs = array();
-	foreach($post->ancestors as $parent_pid) {
-	    $parent_post = get_post($parent_pid);
-	    
-	    $crumbs[] = '<a href="'.get_permalink($parent_pid).'" class="incsub_wiki_crumbs">'.$parent_post->post_title.'</a>';
-	}
-	
-	sort($crumbs);
-	
-	$top .= join(get_option("incsub_meta_seperator", " > "), $crumbs);
-	
-	$children = get_children('post_parent='.$post->ID.'&post_type=incsub_wiki');
-	
-	$crumbs = array();
-	foreach($children as $child) {
-	    $crumbs[] = '<a href="'.get_permalink($child->ID).'" class="incsub_wiki_crumbs">'.$child->post_title.'</a>';
-	}
-	
-	$bottom = "<h3>".__('Sub Wikis', $this->translation_domain) . "</h3> <ul><li>";
-	
-	$bottom .= join("</li><li>", $crumbs);
-	
-	if (count($crumbs) == 0) {
-	    $bottom = "";
-	} else {
-	    $bottom .= "</li></ul>";
-	}
-	
-	$revisions = wp_get_post_revisions($post->ID);
-	
-	if (current_user_can('edit_wiki')) {
-	    $bottom .= '<div class="incsub_wiki-meta">';
-	    if (is_array($revisions) && count($revisions) > 0) {
-		$revision = array_shift($revisions);
-	    }
-	    $bottom .= '</div>';
-	}
-	
-	$notification_meta = get_post_custom($post->ID, array('incsub_wiki_email_notification' => 'enabled'));
-	
-	if ($notification_meta['incsub_wiki_email_notification'][0] == 'enabled' && !$this->is_subscribed()) {
-	    if (is_user_logged_in()) {
-		    $bottom .= '<div class="incsub_wiki-subscribe"><a href="'.wp_nonce_url(add_query_arg(array('post_id' => $post->ID, 'subscribe' => 1)), "wiki-subscribe-wiki_$post->ID" ).'">'.__('Notify me of changes', $this->translation_domain).'</a></div>';
-	    } else {
-		if (!empty($_COOKIE['incsub_wiki_email'])) {
-		    $user_email = $_COOKIE['incsub_wiki_email'];
-		} else {
-		    $user_email = "";
-		}
-		$bottom .= '<div class="incsub_wiki-subscribe">'.
-		'<form action="" method="post">'.
-		'<label>'.__('E-mail', $this->translation_domain).': <input type="text" name="email" id="email" value="'.$user_email.'" /></label> &nbsp;'.
-		'<input type="hidden" name="post_id" id="post_id" value="'.$post->ID.'" />'.
-		'<input type="submit" name="subscribe" id="subscribe" value="'.__('Notify me of changes', $this->translation_domain).'" />'.
-		'<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-subscribe-wiki_$post->ID").'" />'.
-		'</form>'.
-		'</div>';
-	    }
-	}
-	
-	return '<div class="incsub_wiki-top entry-utility">'.$top.'</div> '.$content.' <div class="incsub_wiki-bottom entry-utility">'.$bottom.'</div>';
     }
     
     function is_subscribed() {
