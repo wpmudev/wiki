@@ -5,7 +5,7 @@
  Description: Add a wiki to your blog
  Author: S H Mohanjith (Incsub)
  WDP ID:
- Version: 1.0.0a3
+ Version: 1.0.0a4
  Author URI: http://premium.wpmudev.org
 */
 /**
@@ -387,10 +387,8 @@ class Wiki {
 		if (wp_verify_nonce($_POST['_wpnonce'], "wiki-editpost_{$_POST['post_ID']}")) {
 		    $post_id = $this->edit_post($_POST);
 		    wp_redirect(get_permalink($post_id).'?action=edit');
-		} else {
-		    wp_redirect(get_permalink().'?action=edit');
+		    exit();
 		}
-		exit();
 		break;
 	}
     }
