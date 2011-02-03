@@ -95,6 +95,8 @@ class Wiki {
 	add_filter('rewrite_rules_array', array(&$this, 'add_rewrite_rules'));
 	add_action('option_rewrite_rules', array(&$this, 'check_rewrite_rules'));
 	
+	add_filter('user_can_richedit', array(&$this, 'user_can_richedit'));
+	
 	// White list the options to make sure non super admin can save wiki options 
 	// add_filter('whitelist_options', array(&$this, 'whitelist_options'));
 	
@@ -139,6 +141,14 @@ class Wiki {
     
     function custom_template() {
 	return $this->product_template;
+    }
+    
+    function user_can_richedit($wp_rich_edit) {
+	global $post;
+	
+	if ($post->post_type) {
+	    return true;
+	}
     }
     
     function add_rewrite_rules($rules){
@@ -616,6 +626,8 @@ class Wiki {
 		    
 		    $crumbs[] = '<a href="'.get_permalink($parent_pid).'" class="incsub_wiki_crumbs">'.$parent_post->post_title.'</a>';
 		}
+		
+		$crumbs[] = '<span class="incsub_wiki_crumbs">'.$post->post_title.'</span>';
 		
 		sort($crumbs);
 		
@@ -1881,7 +1893,7 @@ class WikiAdmin {
 	    'wpeditimage_disable_captions' => $no_captions,
 	    'plugins' => implode( ',', $plugins ),
 	);
-
+	
 	if ( ! empty( $editor_styles ) && is_array( $editor_styles ) ) {
 	    $mce_css = array();
 	    $style_uri = get_stylesheet_directory_uri();

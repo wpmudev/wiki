@@ -104,3 +104,19 @@
     width: auto;
     margin: 0 2px 2px;
 }
+
+div.incsub_wiki_top span.incsub_wiki_crumbs, 
+div.incsub_wiki_top a.incsub_wiki_crumbs {
+    font-size: 1.2em;
+    color: #888;
+}
+
+div.incsub_wiki_top {
+    padding-bottom: 5px;
+    font-size: 0.7em;
+    color: #888;
+}
+
+#content div.incsub_wiki .entry-content {
+    padding-top: 0;
+}
