@@ -92,6 +92,9 @@ class Wiki {
 	add_filter('get_edit_post_link', array(&$this, 'get_edit_post_link'));
 	add_filter('comments_open', array(&$this, 'comments_open'), 10, 1);
 	
+	add_filter('rewrite_rules_array', array(&$this, 'add_rewrite_rules'));
+	add_action('option_rewrite_rules', array(&$this, 'check_rewrite_rules'));
+	
 	// White list the options to make sure non super admin can save wiki options 
 	// add_filter('whitelist_options', array(&$this, 'whitelist_options'));
 	
@@ -101,8 +104,7 @@ class Wiki {
 	    $this->db_prefix = $wpdb->prefix;
 	}
 	
-	$this->_options['default'] = get_option('wiki_default', array( 
-        ));
+	$this->_options['default'] = get_option('wiki_default', array());
     }
     
     function load_templates() {
@@ -137,6 +139,32 @@ class Wiki {
     
     function custom_template() {
 	return $this->product_template;
+    }
+    
+    function add_rewrite_rules($rules){
+	$settings = get_option('mp_settings');
+	
+	$new_rules = array();
+	
+	$new_rules['wiki/(.+?)/?$'] = 'index.php?incsub_wiki=$matches[1]';
+	
+	return array_merge($new_rules, $rules);
+    }
+    
+    function check_rewrite_rules($value) {
+	//prevent an infinite loop
+	if ( ! post_type_exists( 'incsub_wiki' ) )
+	    return;
+	
+	$array_key = 'wiki/(.+?)';
+	if ( !array_key_exists($array_key, $value) ) {
+	    $this->flush_rewrite();
+	}
+    }
+    
+    function flush_rewrite() {
+	global $wp_rewrite;
+	$wp_rewrite->flush_rules();
     }
     
     function comments_open($open) {
