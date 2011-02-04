@@ -2010,12 +2010,6 @@ class WikiAdmin {
 	    wp_print_scripts( array( 'wpdialogs-popup' ) );
 	    wp_print_styles('wp-jquery-ui-dialog');
 	}
-	if ( in_array( 'wplink', $plugins ) ) {
-	    require_once ABSPATH . 'wp-admin/includes/internal-linking.php';
-	    add_action('tiny_mce_preload_dialogs', 'wp_link_dialog');
-	    wp_print_scripts('wplink');
-	    wp_print_styles('wplink');
-	}
     }
     
     function tiny_mce_preload_dialogs() { ?>

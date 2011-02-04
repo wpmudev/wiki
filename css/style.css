@@ -13,48 +13,44 @@
 }
 
 .incsub_wiki_tabs ul {
-    margin: 0;
+    margin: 0 !important;
     padding: 0;
-}
-
-#content .incsub_wiki_tabs ul {
-    margin-bottom: 0;
 }
 
 .incsub_wiki_tabs ul.left {
     float: left;
-    margin-left: 1em;
+    margin-left: 1em !important;
 }
 
 .incsub_wiki_tabs ul.right {
     float: right;
-    margin-right: 1em;
+    margin-right: 1em !important;
 }
 
 .incsub_wiki_tabs li {
-    display: inline;
-    border: solid #999;
-    border-width: 1px 1px 0 1px;
-    padding-bottom: 0.1em;
-    margin: 0 0.5em 0 0;
-    color: #333;
-    background: #efefef;
+    display: inline !important;
+    border: solid #999 !important;
+    border-width: 1px 1px 0 1px !important;
+    padding-bottom: 0.1em !important;
+    margin: 0 0.5em 0 0 !important;
+    color: #333 !important;
+    background: #efefef !important;
 }
 
 .incsub_wiki_tabs .right li {
-    margin: 0 0 0 0.5em;
+    margin: 0 0 0 0.5em !important;
 }
 
 .incsub_wiki_tabs li.current {
-    border-bottom: 1px solid white;
-    color: black;
-    background: white;
+    border-bottom: 1px solid white !important;
+    color: black !important;
+    background: white !important;
 }
 
 .incsub_wiki_tabs li a {
-    padding: 0 1em;
-    text-decoration: none;
-    color: inherit;
+    padding: 0 1em !important;
+    text-decoration: none !important;
+    color: inherit !important;
 }
 
 .type-incsub_wiki .post-edit-link {
