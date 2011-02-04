@@ -1275,7 +1275,7 @@ class Wiki {
 		'public' => true,
 		'show_ui' => true,
 		'publicly_queryable' => true,
-		'capability_type' => 'wiki', 'wikis',
+		'capability_type' => 'wiki',
 		'hierarchical' => true,
 		'map_meta_cap' => true,
 		'query_var' => true,
