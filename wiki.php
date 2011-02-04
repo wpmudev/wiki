@@ -166,6 +166,9 @@ class Wiki {
 	if ( ! post_type_exists( 'incsub_wiki' ) )
 	    return;
 	
+	if (!is_array($value))
+	    $value = array();
+	
 	$array_key = 'wiki/(.+?)';
 	if ( !array_key_exists($array_key, $value) ) {
 	    $this->flush_rewrite();
@@ -424,7 +427,7 @@ class Wiki {
 	    case 'editpost':
 		if (wp_verify_nonce($_POST['_wpnonce'], "wiki-editpost_{$_POST['post_ID']}")) {
 		    $post_id = $this->edit_post($_POST);
-		    wp_redirect(get_permalink($post_id).'?action=edit');
+		    wp_redirect(get_permalink($post_id));
 		    exit();
 		}
 		break;
