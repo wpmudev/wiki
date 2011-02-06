@@ -508,9 +508,9 @@ class Wiki {
 		    break;
 		}
 		
-		if ( !current_user_can( 'read_post', $left_revision->ID ) || !current_user_can( 'read_post', $right_revision->ID ) ) {
+		/*if ( !current_user_can( 'read_post', $left_revision->ID ) || !current_user_can( 'read_post', $right_revision->ID ) ) {
 		    break;
-		}
+		}*/
 		
 		// If we're comparing a revision to itself, redirect to the 'view' page for that revision or the edit page for that post
 		if ( $left_revision->ID == $right_revision->ID ) {
@@ -859,10 +859,10 @@ class Wiki {
 	    $xcontent .= '<input type="hidden" name="parent_id" id="parent_id" value="'.$edit_post->post_parent.'" />';
 	    $xcontent .= '<input type="hidden" name="original_publish" id="original_publish" value="Update" />';
 	}
-	
 	$xcontent .= '<input type="hidden" name="post_type" id="post_type" value="'.$edit_post->post_type.'" />';
 	$xcontent .= '<input type="hidden" name="post_ID" id="wiki_id" value="'.$edit_post->ID.'" />';
 	$xcontent .= '<input type="hidden" name="post_status" id="wiki_id" value="published" />';
+	$xcontent .= '<input type="hidden" name="comment_status" id="comment_status" value="open" />';
 	$xcontent .= '<input type="hidden" name="action" id="wiki_action" value="editpost" />';
 	$xcontent .= '<div><input type="text" name="post_title" id="wiki_title" value="'.$edit_post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
 	$xcontent .= '<div><textarea tabindex="2" name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea></div>';
@@ -1012,6 +1012,8 @@ class Wiki {
 		break;
 	}
 	
+	// print_r($revisions);
+	
 	/* translators: post revision: 1: when, 2: author name */
 	$titlef = _x( '%1$s by %2$s', 'post revision' );
 	
@@ -1020,10 +1022,10 @@ class Wiki {
 	    
 	$rows = '';
         $class = false;
-	$can_edit_post = current_user_can( 'edit_post', $post->ID );
+	$can_edit_post = current_user_can( 'edit_wiki', $post->ID );
         foreach ( $revisions as $revision ) {
-	    if ( !current_user_can( 'read_post', $revision->ID ) )
-		continue;
+	    /*if ( !current_user_can( 'read_post', $revision->ID ) )
+		continue;*/
 	    if ( 'revision' === $type && wp_is_post_autosave( $revision ) )
 		continue;
 	    
