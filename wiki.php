@@ -1042,10 +1042,10 @@ class Wiki {
 		
 		$class = $class ? '' : " class='alternate'";
 		
-		if ( $post->ID != $revision->ID && $can_edit_post )
+		if ( $post->ID != $revision->ID && $can_edit_post && current_user_can( 'read_post', $revision->ID ) )
 		    $actions = '<a href="' . wp_nonce_url( add_query_arg( array( 'revision' => $revision->ID, 'action' => 'restore' ) ), "restore-post_$post->ID|$revision->ID" ) . '">' . __( 'Restore' ) . '</a>';
 		else
-		    $actions = '';
+		    $actions = ' ';
 		    
 		$rows .= "<tr$class>\n";
 	        $rows .= "\t<td style='white-space: nowrap' scope='row'><input type='radio' name='left' value='{$revision->ID}' {$left_checked} /></td>\n";
