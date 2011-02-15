@@ -4,8 +4,8 @@
  Plugin URI: http://premium.wpmudev.org/project/wiki
  Description: Add a wiki to your blog
  Author: S H Mohanjith (Incsub)
- WDP ID:
- Version: 1.0.0
+ WDP ID: 168
+ Version: 0.0.2
  Author URI: http://premium.wpmudev.org
 */
 /**
@@ -27,7 +27,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.0.0';
+    var $current_version = '0.0.2';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -106,7 +106,7 @@ class Wiki {
 	    $this->db_prefix = $wpdb->prefix;
 	}
 	
-	$this->_options['default'] = get_option('wiki_default', array());
+	$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki'));
     }
     
     function load_templates() {
@@ -156,7 +156,7 @@ class Wiki {
 	
 	$new_rules = array();
 	
-	$new_rules['wiki/(.+?)/?$'] = 'index.php?incsub_wiki=$matches[1]';
+	$new_rules[$this->_options['default']['slug'].'/(.+?)/?$'] = 'index.php?incsub_wiki=$matches[1]';
 	
 	return array_merge($new_rules, $rules);
     }
@@ -169,7 +169,7 @@ class Wiki {
 	if (!is_array($value))
 	    $value = array();
 	
-	$array_key = 'wiki/(.+?)';
+	$array_key = $this->_options['default']['slug'].'/(.+?)';
 	if ( !array_key_exists($array_key, $value) ) {
 	    $this->flush_rewrite();
 	}
@@ -1212,6 +1212,7 @@ class Wiki {
 	
 	// Default chat options
 	$this->_options = array(
+	    'slug' => 'wiki'
         );
 	
 	add_option('wiki_default', $this->_options['default']);
@@ -1286,7 +1287,7 @@ class Wiki {
 	    )
 	);
 	
-	$wiki_structure = '/wiki/%wiki%';
+	$wiki_structure = '/'.$this->_options['default']['slug'].'/%wiki%';
 	
 	$wp_rewrite->add_rewrite_tag("%wiki%", '(.+?)', "incsub_wiki=");
 	$wp_rewrite->add_permastruct('incsub_wiki', $wiki_structure, false);
@@ -2023,3 +2024,13 @@ class WikiAdmin {
 }
 
 $wiki = new Wiki();
+
+if ( !function_exists( 'wdp_un_check' ) ) {
+    add_action( 'admin_notices', 'wdp_un_check', 5 );
+    add_action( 'network_admin_notices', 'wdp_un_check', 5 );
+
+    function wdp_un_check() {
+        if ( !class_exists( 'WPMUDEV_Update_Notifications' ) && current_user_can( 'edit_users' ) )
+	    echo '<div class="error fade"><p>' . __('Please install the latest version of <a href="http://premium.wpmudev.org/project/update-notifications/" title="Download Now &raquo;">our free Update Notifications plugin</a> which helps you stay up-to-date with the most stable, secure versions of WPMU DEV themes and plugins. <a href="http://premium.wpmudev.org/wpmu-dev/update-notifications-plugin-information/">More information &raquo;</a>', 'wpmudev') . '</a></p></div>';
+    }
+}
