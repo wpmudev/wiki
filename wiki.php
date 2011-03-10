@@ -127,7 +127,7 @@ class Wiki {
 	    }
 	    $templates[] = "incsub_wiki.php";
 	    
-	    if ($this->product_template = locate_template($templates)) {
+	    if ($this->wiki_template = locate_template($templates)) {
 	      add_filter('template_include', array(&$this, 'custom_template') );
 	    } else {
 	      //otherwise load the page template and use our own theme
@@ -140,7 +140,7 @@ class Wiki {
     }
     
     function custom_template() {
-	return $this->product_template;
+	return $this->wiki_template;
     }
     
     function user_can_richedit($wp_rich_edit) {
