@@ -153,7 +153,7 @@ class Wiki {
     }
     
     function add_rewrite_rules($rules){
-	$settings = get_option('mp_settings');
+	$settings = get_option('incsub_wiki_settings');
 	
 	$new_rules = array();
 	
