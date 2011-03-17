@@ -5,7 +5,7 @@
  Description: Add a wiki to your blog
  Author: S H Mohanjith (Incsub)
  WDP ID: 168
- Version: 1.0.0
+ Version: 1.0.1a1
  Author URI: http://premium.wpmudev.org
 */
 /**
@@ -27,7 +27,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.0.0';
+    var $current_version = '1.0.1a1';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -323,6 +323,7 @@ class Wiki {
 	$post_ID = (int) $post_data['post_ID'];
 	
 	$ptype = get_post_type_object($post_data['post_type']);
+	
 	if ( !current_user_can( $ptype->cap->edit_post, $post_ID ) ) {
 	    if ( 'page' == $post_data['post_type'] )
 		wp_die( __('You are not allowed to edit this page.' ));
@@ -1106,7 +1107,6 @@ class Wiki {
 		}
 		return $allcaps;
 	    }
-	    
 	    foreach ($caps as $cap) {
 		$capable = false;
 		switch ($cap) {
@@ -1115,6 +1115,7 @@ class Wiki {
 			break;
 		    case 'edit_others_wikis':
 		    case 'edit_published_wikis':
+		    case 'edit_wikis':
 		    case 'edit_wiki':
 			if (isset($args[2])) {
 			    $edit_post = get_post($args[2]);
@@ -1123,7 +1124,6 @@ class Wiki {
 			} else {
 			    $edit_post = $post;
 			}
-			
 			if ($edit_post) {
 			    $meta = get_post_custom($edit_post->ID);
 			    $current_privileges = unserialize($meta["incsub_wiki_privileges"][0]);
@@ -1131,7 +1131,9 @@ class Wiki {
 			    if (!$current_privileges) {
 				$current_privileges = array();
 			    }
-			    if ($current_user->ID == 0) {
+			    if ($edit_post->post_status == 'auto-draft') {
+				$capable = true;
+			    } else if ($current_user->ID == 0) {
 				if (in_array('anyone', $current_privileges)) {
 				    $capable = true;
 				}
