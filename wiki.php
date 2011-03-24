@@ -1227,7 +1227,49 @@ class Wiki {
      * @see		http://codex.wordpress.org/Adding_Administration_Menus
      */
     function admin_menu() {
+	$page = add_submenu_page('edit.php?post_type=incsub_wiki', __('Wiki Settings', $this->translation_domain), __('Wiki Settings', $this->translation_domain), 'manage_options', 'incsub_wiki', array(&$this, 'options_page'));
+	add_action( 'admin_print_scripts-' . $page, array(&$this, 'admin_script_settings') );
+	add_action( 'admin_print_styles-' . $page, array(&$this, 'admin_css_settings') );
+    }
+    
+    function admin_script_settings() {
 	// Nothing to do
+    }
+    
+    function admin_css_settings() {
+	// Nothing to do
+    }
+    
+    function options_page() {
+	if(!current_user_can('manage_options')) {
+  		echo "<p>" . __('Nice Try...', $this->translation_domain) . "</p>";  //If accessed properly, this message doesn't appear.
+  		return;
+  	}
+	if (wp_verify_nonce($_POST['_wpnonce'], 'incsub_wiki-update-options')) {
+	    $this->_options['default']['slug'] = $_POST['wiki_default']['slug'];
+	    update_option('wiki_default', $this->_options['default']);
+	    wp_redirect('edit.php?post_type=incsub_wiki&page=incsub_wiki&incsub_wiki_settings_saved=1');
+	}
+	if ($_GET['incsub_wiki_settings_saved'] == 1) {
+          echo '<div class="updated fade"><p>'.__('Settings saved.', $this->translation_domain).'</p></div>';
+        }
+	?>
+	<div class="wrap">
+	    <h2><?php _e('Wiki Settings', $this->translation_domain); ?></h2>
+	    <form method="post" action="edit.php?post_type=incsub_wiki&amp;page=incsub_wiki">
+	    <?php wp_nonce_field('incsub_wiki-update-options'); ?>
+	    <table>
+		    <tr valign="top">
+			    <td><label for="incsub_wiki-slug"><?php _e('Wiki Slug', $this->translation_domain); ?></label> </td>
+			    <td> /<input type="text" size="20" id="incsub_wiki-slug" name="wiki_default[slug]" value="<?php print $this->_options['default']['slug']; ?>" /></td>
+		    </tr>
+	    </table>
+	    
+	    <p class="submit">
+		<input type="submit" name="submit_settings" value="<?php _e('Save Changes', $this->translation_domain) ?>" />
+	    </p>
+	</form>
+	<?php
     }
     
     /**

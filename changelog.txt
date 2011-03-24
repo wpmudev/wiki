@@ -9,6 +9,7 @@ Change Log:
 ----------------------------------------------------------------------
 - 'You are not allowed to edit this post' when a network user creates
    a new wiki
+- Wiki slug added to Wiki Settings
 
 1.0.0 - 02/16/2011
 ----------------------------------------------------------------------
