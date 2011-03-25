@@ -5,7 +5,7 @@
  Description: Add a wiki to your blog
  Author: S H Mohanjith (Incsub)
  WDP ID: 168
- Version: 1.0.1a1
+ Version: 1.0.1
  Author URI: http://premium.wpmudev.org
 */
 /**
@@ -27,7 +27,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.0.1a1';
+    var $current_version = '1.0.1';
     /**
      * @var		string	$translation_domain	Translation domain
      */
