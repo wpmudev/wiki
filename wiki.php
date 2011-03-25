@@ -1214,9 +1214,9 @@ class Wiki {
 	dbDelta($sql_main);
 	
 	// Default chat options
-	$this->_options = array(
+	$this->_options = array('default' => array(
 	    'slug' => 'wiki'
-        );
+        ));
 	
 	add_option('wiki_default', $this->_options['default']);
     }
