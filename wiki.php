@@ -1214,11 +1214,13 @@ class Wiki {
 	dbDelta($sql_main);
 	
 	// Default chat options
-	$this->_options = array('default' => array(
-	    'slug' => 'wiki'
-        ));
-	
-	add_option('wiki_default', $this->_options['default']);
+	$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki'));
+
+	if (!is_array($this->_options['default'])) {
+		 $this->_options['default'] = array('slug' => 'wiki');
+	}
+
+	update_option('wiki_default', $this->_options['default']);
     }
     
     /**
