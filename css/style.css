@@ -17,6 +17,10 @@
     padding: 0;
 }
 
+.incsub_wiki_tabs ul.left, .incsub_wiki_tabs ul.right {
+    width: auto !important;
+}
+
 .incsub_wiki_tabs ul.left {
     float: left;
     margin-left: 1em !important;
