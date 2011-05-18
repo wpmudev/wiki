@@ -5,7 +5,7 @@
  Description: Add a wiki to your blog
  Author: S H Mohanjith (Incsub)
  WDP ID: 168
- Version: 1.0.4
+ Version: 1.0.5
  Author URI: http://premium.wpmudev.org
 */
 /**
@@ -27,7 +27,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.0.4';
+    var $current_version = '1.0.5';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -710,7 +710,9 @@ class Wiki {
 	}
 	
 	if ( !empty($redirect) ) {
-	    wp_redirect( $redirect );
+	    echo '<script type="text/javascript">'.
+	    'window.location = "'.$redirect.'";'.
+	    '</script>';
 	    exit;
 	}
 	
@@ -933,23 +935,26 @@ class Wiki {
 		    break;
 	    }
 	}
+
+	$seperator = (preg_match('/\?/i', get_permalink()) > 0)? '&' : '?';
+
 	$tabs  = '<ul class="left">';
 	$tabs .= '<li class="'.join(' ', $classes['page']).'" ><a href="'.get_permalink().'" >' . __('Page', $this->translation_domain) . '</a></li>';
 	if (comments_open()) {
-	    $tabs .= '<li class="'.join(' ', $classes['discussion']).'" ><a href="'.get_permalink().'?action=discussion" >' . __('Discussion', $this->translation_domain) . '</a></li>';
+	    $tabs .= '<li class="'.join(' ', $classes['discussion']).'" ><a href="'.get_permalink().$seperator.'action=discussion" >' . __('Discussion', $this->translation_domain) . '</a></li>';
 	}
-	$tabs .= '<li class="'.join(' ', $classes['history']).'" ><a href="'.get_permalink().'?action=history" >' . __('History', $this->translation_domain) . '</a></li>';
+	$tabs .= '<li class="'.join(' ', $classes['history']).'" ><a href="'.get_permalink().$seperator.'action=history" >' . __('History', $this->translation_domain) . '</a></li>';
 	$tabs .= '</ul>';
 	
 	$post_type_object = get_post_type_object( $post->post_type );
 	
 	if (current_user_can($post_type_object->cap->edit_post, $post->ID)) {
 	    $tabs .= '<ul class="right">';
-	    $tabs .= '<li class="'.join(' ', $classes['edit']).'" ><a href="'.get_permalink().'?action=edit" >' . __('Edit', $this->translation_domain) . '</a></li>';
+	    $tabs .= '<li class="'.join(' ', $classes['edit']).'" ><a href="'.get_permalink().$seperator.'action=edit" >' . __('Edit', $this->translation_domain) . '</a></li>';
 	    if (is_user_logged_in()) {
 	    $tabs .= '<li class="'.join(' ', $classes['advanced_edit']).'" ><a href="'.get_edit_post_link().'" >' . __('Advanced', $this->translation_domain) . '</a></li>';
 	    }
-	    $tabs .= '<li class="'.join(' ', $classes['create']).'"><a href="'.get_permalink().'?action=edit&eaction=create">'.__('Create new', $this->translation_domain).'</a></li>';
+	    $tabs .= '<li class="'.join(' ', $classes['create']).'"><a href="'.get_permalink().$seperator.'action=edit&eaction=create">'.__('Create new', $this->translation_domain).'</a></li>';
 	    $tabs .= '</ul>';
 	}
 	
