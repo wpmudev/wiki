@@ -1658,92 +1658,40 @@ class WikiWidget extends WP_Widget {
 	<?php echo $before_widget; ?>
 	<?php echo $before_title . $title . $after_title; ?>
 	<?php
-	    $wiki_tree = array();
-	    $wiki_posts = get_posts('post_type=incsub_wiki&order_by=menu_order');
-	    
-	    // 1st pass
-	    foreach ($wiki_posts as $wiki_post) {
-		if ($wiki_post->post_parent == 0) {
-		    $wiki_tree[$wiki_post->ID] = array($wiki_post);
-		}
-		if ($wiki_post->ID == $post->ID) {
-		    $wiki_post->classes = 'current';
-		}
-	    }
-	    
-	    if ($options['hierarchical'] == 'yes') {
-		// 2nd pass
-		foreach ($wiki_posts as $wiki_post) {
-		    if ($wiki_post->post_parent != 0) {
-			if (isset($wiki_tree[$wiki_post->post_parent])) {
-			    $wiki_tree[$wiki_post->post_parent][$wiki_post->ID] = array($wiki_post);
-			}
-		    }
-		}
-		
-		// 3rd pass
-		foreach ($wiki_posts as $wiki_post) {
-		    if ($wiki_post->post_parent != 0) {
-			if (!isset($wiki_tree[$wiki_post->post_parent])) {
-			    $n = get_post($wiki_post->post_parent);
-			    if ($n->post_parent != 0) {
-				$wiki_tree[$n->post_parent][$wiki_post->post_parent] = array($n);
-				$wiki_tree[$n->post_parent][$wiki_post->post_parent][$wiki_post->ID] = array($wiki_post);
-			    } else {
-				$wiki_tree[$wiki_post->post_parent] = array($n);
-				$wiki_tree[$wiki_post->post_parent][$wiki_post->ID] = array($wiki_post);
-			    }
-			}
-		    }
-		}
-	    }
+	    $wiki_posts = get_posts('post_parent=0&post_type=incsub_wiki&order_by=menu_order');
 	?>
 	    <ul>
 		<?php
-		foreach ($wiki_tree as $node) {
-		    $leaf = array_shift($node);
-		    if (count($node) > 0) {
+		foreach ($wiki_posts as $wiki) {
 		?>
-		    <li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a>
-		    <ul>
-		<?php
-			foreach ($node as $nnode) {
-			    $leaf = array_shift($nnode);
-			    if (count($nnode) > 0) {
-			    ?>
-				<li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a>
-				<ul>
-			    <?php
-				    foreach ($nnode as $nnnode) {
-					$leaf = array_shift($nnnode);
-					?>
-					    <li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a></li>
-				       <?php
-				    }
-			    ?>
-				</ul>
-				</li>
-			    <?php
-			    } else {
-			    ?>
-				 <li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a></li>
-			    <?php
-			    }
-			}
-		?>
-		    </ul>
+		    <li><a href="<?php print get_permalink($wiki->ID); ?>" class="<?php print ($wiki->ID == $post->ID)?'current':''; ?>" ><?php print $wiki->post_title; ?></a>
+			<?php print $this->_print_sub_wikis($wiki); ?>
 		    </li>
 		<?php
-		    } else {
-		?>
-		     <li><a href="<?php print get_permalink($leaf->ID); ?>" class="<?php print $leaf->classes; ?>" ><?php print $leaf->post_title; ?></a></li>
-		<?php
-		    }
 		}
 		?>
 	    </ul>
         <br />
         <?php echo $after_widget; ?>
+	<?php
+    }
+    
+    function _print_sub_wikis($wiki) {
+	global $post;
+	
+	$sub_wikis = get_posts('post_parent='.$wiki->ID.'&post_type=incsub_wiki&order_by=menu_order');
+	?>
+	<ul>
+	    <?php
+		foreach ($sub_wikis as $sub_wiki) {
+	    ?>
+	        <li><a href="<?php print get_permalink($sub_wiki->ID); ?>" class="<?php print ($sub_wiki->ID == $post->ID)?'current':''; ?>" ><?php print $sub_wiki->post_title; ?></a>
+		    <?php print $this->_print_sub_wikis($sub_wiki); ?>
+	        </li>
+	    <?php
+		}
+	    ?>
+	</ul>
 	<?php
     }
     
@@ -2021,10 +1969,12 @@ class WikiAdmin {
 	    $mce_options .= $k . ':"' . $v . '", ';
 	}
 	
-	$mce_options = rtrim( trim($mce_options), '\n\r,' ); ?>
+	$mce_options = rtrim( trim($mce_options), '\n\r,' );
+	?>
 	
 	<script type="text/javascript">
 	/* <![CDATA[ */
+	ajaxurl = "<?php echo site_url()."/wp-admin/admin-ajax.php"; ?>";
 	tinyMCEPreInit = {
 		base : "<?php echo $baseurl; ?>",
 		suffix : "",
@@ -2065,6 +2015,14 @@ class WikiAdmin {
 	    wp_print_scripts( array( 'wpdialogs-popup' ) );
 	    wp_print_styles('wp-jquery-ui-dialog');
 	}
+	
+	if ( in_array( 'wplink', $plugins, true ) ) {
+	    require_once ABSPATH . 'wp-admin/includes/template.php';
+            require_once ABSPATH . 'wp-admin/includes/internal-linking.php';
+            ?><div style="display:none;"><?php wp_link_dialog(); ?></div><?php
+            wp_print_scripts('wplink');
+	    wp_print_styles('wplink');
+        }
     }
     
     function tiny_mce_preload_dialogs() { ?>

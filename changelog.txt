@@ -5,11 +5,15 @@ Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
 
-1.0.5 -
+1.0.5 - 06/19/2011
 ----------------------------------------------------------------------
 - Fixed: Page formatting for Wiki in Blogsmu
 - Fixed: Wiki revision compare error
 - Fixed: Wiki create issue when no permalink is not set
+- WordPress 3.2 compatibility
+- Fixed: Link button in fronend editor
+- Added: Link to existing pages
+- Fixed: Wiki widget
 
 1.0.4 - 05/08/2011
 ----------------------------------------------------------------------

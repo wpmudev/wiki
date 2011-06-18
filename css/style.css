@@ -23,12 +23,12 @@
 
 .incsub_wiki_tabs ul.left {
     float: left;
-    margin-left: 1em !important;
+    margin-left: 5px !important;
 }
 
 .incsub_wiki_tabs ul.right {
     float: right;
-    margin-right: 1em !important;
+    margin-right: 5px !important;
 }
 
 .incsub_wiki_tabs li {
@@ -36,7 +36,7 @@
     border: solid #999 !important;
     border-width: 1px 1px 0 1px !important;
     padding-bottom: 0.1em !important;
-    margin: 0 0.5em 0 0 !important;
+    margin: 0 5px 0 0 !important;
     color: #333 !important;
     background: #efefef !important;
 }
@@ -119,4 +119,45 @@ div.incsub_wiki_top {
 
 #content div.incsub_wiki .entry-content {
     padding-top: 0;
+}
+
+.wp_themeSkin table.mceLayout {
+    background: #fff;
+    margin-top: 5px;
+}
+
+input.incsub_wiki_title {
+    width: 99%;
+}
+
+.wp-dialog {
+    background: #fff;
+}
+
+input.button-primary, button.button-primary, a.button-primary {
+    background: url("../images/button-grad.png") repeat-x scroll left top #21759B;
+    border-color: #298CBA;
+    color: #FFFFFF;
+    font-weight: bold;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.submit input, .button, input.button, .button-primary, input.button-primary,
+.button-secondary, input.button-secondary, .button-highlighted,
+input.button-highlighted, #postcustomstuff .submit input {
+    -moz-box-sizing: content-box;
+    border-radius: 11px 11px 11px 11px;
+    border-style: solid;
+    border-width: 1px;
+    cursor: pointer;
+    font-size: 12px !important;
+    line-height: 13px;
+    padding: 3px 8px;
+    text-decoration: none;
+}
+
+.plugins a.delete:hover, #all-plugins-table .plugins a.delete:hover,
+#search-plugins-table .plugins a.delete:hover, .submitbox .submitdelete {
+    border-bottom-color: #FF0000;
+    color: #FF0000;
 }
