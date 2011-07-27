@@ -24,12 +24,12 @@ if ( function_exists('is_supporter') && !is_supporter()) {
     }
     
     function wiki_non_suppporter_admin_menu() {
-	add_menu_page(__('Wiki', $this->translation_domain), __('Wiki', $this->translation_domain), 'edit_post', 'incsub_wiki', 'wiki_non_supporter_page');
+	add_menu_page(__('Wiki', 'incsub_wiki'), __('Wiki', 'incsub_wiki'), 'edit_posts', 'incsub_wiki', 'wiki_non_supporter_page', null, 30);
     }
     
-    add_filter('admin_menu', 'wiki_non_suppporter_admin_menu');
+    add_action('admin_menu', 'wiki_non_suppporter_admin_menu');
 } else {
-    includes 'wiki-include.php';
+    include_once 'wiki-include.php';
 }
 
 if ( !function_exists( 'wdp_un_check' ) ) {

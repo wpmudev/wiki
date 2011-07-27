@@ -64,7 +64,7 @@ class Wiki {
 	add_action('add_meta_boxes_incsub_wiki', array(&$this, 'meta_boxes') );
 	add_action('wp_insert_post', array(&$this, 'save_wiki_meta'), 10, 2 );
 	
-    	add_filter('admin_menu', array(&$this, 'admin_menu'));
+    	add_action('admin_menu', array(&$this, 'admin_menu'));
 	
 	add_action('widgets_init', array(&$this, 'widgets_init'));
 	add_action('pre_post_update', array(&$this, 'send_notifications'), 50, 1);
@@ -684,6 +684,7 @@ class Wiki {
 	if ( !comments_open() ) {
 	    $new_content .= '<style type="text/css">'.
 	    '#comments { display: none; }'.
+            '.comments { display: none; }'.
 	    '</style>';
 	} else {
 	    $new_content .= '<style type="text/css">'.
@@ -1626,10 +1627,11 @@ class WikiWidget extends WP_Widget {
      */
     var $translation_domain = 'wiki';
     
-    function WikiWidget() {
+    function __construct() {
 	$widget_ops = array( 'description' => __('Display Wiki Pages', $this->translation_domain) );
         $control_ops = array( 'title' => __('Wiki', $this->translation_domain), 'hierarchical' => 'yes' );
-        $this->WP_Widget( 'incsub_wiki', __('Wiki', $this->translation_domain), $widget_ops, $control_ops );
+        
+	parent::WP_Widget( 'incsub_wiki', __('Wiki', $this->translation_domain), $widget_ops, $control_ops );
     }
     
     function widget($args, $instance) {
