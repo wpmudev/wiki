@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.0.6';
+    var $current_version = '1.0.7';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -105,11 +105,11 @@ class Wiki {
 	    $wiki_id = (int) $wp_query->get_queried_object_id();
 	    $templates = array();
 	    
-	    if ( $product_name ) {
+	    if ( $wiki_name ) {
 		$templates[] = "incsub_wiki-$wiki_name.php";
 	    }
 	    
-	    if ( $product_id ) {
+	    if ( $wiki_id ) {
 		$templates[] = "incsub_wiki-$wiki_id.php";
 	    }
 	    $templates[] = "incsub_wiki.php";
