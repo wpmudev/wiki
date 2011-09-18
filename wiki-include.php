@@ -1668,7 +1668,7 @@ class WikiWidget extends WP_Widget {
     function _print_sub_wikis($wiki) {
 	global $post;
 	
-	$sub_wikis = get_posts('post_parent='.$wiki->ID.'&post_type=incsub_wiki&order_by=menu_order');
+	$sub_wikis = get_posts('post_parent='.$wiki->ID.'&post_type=incsub_wiki&order_by=menu_order&numberposts=100000');
 	?>
 	<ul>
 	    <?php
