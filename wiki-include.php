@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.0.8';
+    var $current_version = '1.0.9';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -1642,19 +1642,20 @@ class WikiWidget extends WP_Widget {
 	$options = $instance;
 	
 	$title = apply_filters('widget_title', empty($instance['title']) ? __('Wiki', $this->translation_domain) : $instance['title'], $instance, $this->id_base);
+	$hierarchical = $instance['hierarchical'];
 	
 	?>
 	<?php echo $before_widget; ?>
 	<?php echo $before_title . $title . $after_title; ?>
 	<?php
-	    $wiki_posts = get_posts('post_parent=0&post_type=incsub_wiki&order_by=menu_order');
+	    $wiki_posts = get_posts('post_parent=0&post_type=incsub_wiki&order_by=menu_order&numberposts=100000');
 	?>
 	    <ul>
 		<?php
 		foreach ($wiki_posts as $wiki) {
 		?>
 		    <li><a href="<?php print get_permalink($wiki->ID); ?>" class="<?php print ($wiki->ID == $post->ID)?'current':''; ?>" ><?php print $wiki->post_title; ?></a>
-			<?php print $this->_print_sub_wikis($wiki); ?>
+			<?php print ($hierarchical == 'yes')?$this->_print_sub_wikis($wiki):''; ?>
 		    </li>
 		<?php
 		}
