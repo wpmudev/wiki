@@ -1299,13 +1299,13 @@ class Wiki {
 	$labels = array(
 	    'name' => __('Wikis', $this->translation_domain),
 	    'singular_name' => __('Wiki', $this->translation_domain),
-	    'add_new' => __('Add WIki', $this->translation_domain),
+	    'add_new' => __('Add Wiki', $this->translation_domain),
 	    'add_new_item' => __('Add New Wiki', $this->translation_domain),
 	    'edit_item' => __('Edit Wiki', $this->translation_domain),
 	    'new_item' => __('New Wiki', $this->translation_domain),
 	    'view_item' => __('View Wiki', $this->translation_domain),
 	    'search_items' => __('Search Wiki', $this->translation_domain),
-	    'not_found' =>  __('No Wiki found', $this->translation_domain),
+	    'not_found' =>  __('No wiki found', $this->translation_domain),
 	    'not_found_in_trash' => __('No wikis found in Trash', $this->translation_domain),
 	    'menu_name' => __('Wikis', $this->translation_domain)
 	);
@@ -1358,6 +1358,13 @@ class Wiki {
 		wp_redirect(get_option('siteurl'));
 		exit();  
 	    }
+	}
+	
+	if (isset($_POST['wiki_default']) && wp_verify_nonce($_POST['_wpnonce'], 'incsub_wiki-update-options')) {
+	    $this->_options['default']['slug'] = $_POST['wiki_default']['slug'];
+	    update_option('wiki_default', $this->_options['default']);
+	    wp_redirect('edit.php?post_type=incsub_wiki&page=incsub_wiki&incsub_wiki_settings_saved=1');
+	    exit();
 	}
     }
     
