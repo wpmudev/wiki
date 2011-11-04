@@ -13,7 +13,8 @@
  */
 global $wiki;
 
-define('WIKI_DEMO_FOR_NON_SUPPORTER', false);
+if (!defined('WIKI_DEMO_FOR_NON_SUPPORTER'))
+    define('WIKI_DEMO_FOR_NON_SUPPORTER', false);
 
 if ( WIKI_DEMO_FOR_NON_SUPPORTER && function_exists('is_supporter') && !is_supporter()) {
     function wiki_non_suppporter_admin_menu() {
