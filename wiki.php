@@ -13,18 +13,12 @@
  */
 global $wiki;
 
-if ( function_exists('is_supporter') && !is_supporter()) {
-    function wiki_non_supporter_page() {
-	?>
-	<h3><?php _e('Pro Only...', 'incsub_wiki'); ?></h3>
-	<script type="text/javascript">
-	window.location = '<?php echo get_admin_url(); ?>supporter.php';
-	</script>
-	<?php
-    }
-    
+define('WIKI_DEMO_FOR_NON_SUPPORTER', false);
+
+if ( WIKI_DEMO_FOR_NON_SUPPORTER && function_exists('is_supporter') && !is_supporter()) {
     function wiki_non_suppporter_admin_menu() {
-	add_menu_page(__('Wiki', 'incsub_wiki'), __('Wiki', 'incsub_wiki'), 'edit_posts', 'incsub_wiki', 'wiki_non_supporter_page', null, 30);
+	global $psts;
+	add_menu_page(__('Wiki', 'incsub_wiki'), __('Wiki', 'incsub_wiki'), 'edit_posts', 'incsub_wiki', array(&$psts, 'feature_notice'), null, 30);
     }
     
     add_action('admin_menu', 'wiki_non_suppporter_admin_menu');
