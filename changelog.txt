@@ -9,6 +9,7 @@ Change Log:
 ----------------------------------------------------------------------
 - Fixed: Wiki widget, only top level
 - Fixed: error in wp-includes/pluggable.php
+- Fixed: Pro Site incompatibility
 
 1.0.8 - 09/18/2011
 ----------------------------------------------------------------------
