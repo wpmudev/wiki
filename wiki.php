@@ -7,6 +7,7 @@
  WDP ID: 168
  Version: 1.0.9
  Author URI: http://premium.wpmudev.org
+ Text Domain: incsub_wiki
 */
 /**
  * @global	object	$wiki	Convenient access to the chat object
