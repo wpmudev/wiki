@@ -97,12 +97,12 @@ class Wiki {
     }
     
     function load_templates() {
-	global $wp_query;
+	global $wp_query, $post;
 	
-	if ($wp_query->is_single && $wp_query->query_vars['post_type'] == 'incsub_wiki') {
+	if ($wp_query->is_single && $post->post_type == 'incsub_wiki') {
 	    //check for custom theme templates
-	    $wiki_name = get_query_var('incsub_wiki');
-	    $wiki_id = (int) $wp_query->get_queried_object_id();
+	    $wiki_name = $post->post_name;
+	    $wiki_id = (int) $post->ID;
 	    $templates = array();
 	    
 	    if ( $wiki_name ) {
@@ -422,7 +422,7 @@ class Wiki {
 		break;
 	}
     }
-
+    
     function theme($content) {
 	global $post;
 	
@@ -434,7 +434,26 @@ class Wiki {
 	$right       = isset($_REQUEST['right'])?absint($_REQUEST['right']):0;
 	$action      = isset($_REQUEST['action'])?$_REQUEST['action']:'view';
 	
-	switch ($_REQUEST['action']) {
+	$new_content .= $this->decider($content, $action, $revision_id, $left, $right);
+	
+	if ( !comments_open() ) {
+	    $new_content .= '<style type="text/css">'.
+	    '#comments { display: none; }'.
+            '.comments { display: none; }'.
+	    '</style>';
+	} else {
+	    $new_content .= '<style type="text/css">'.
+	    '.hentry { margin-bottom: 5px; }'.
+	    '</style>';
+	}
+	
+	return $new_content;
+    }
+
+    function decider($content, $action, $revision_id = null, $left = null, $right = null) {
+	global $post;
+	
+	switch ($action) {
 	    case 'discussion':
 		break;
 	    case 'edit':
@@ -496,10 +515,6 @@ class Wiki {
 		if ( !$right_revision = get_post( $right ) ) {
 		    break;
 		}
-		
-		/*if ( !current_user_can( 'read_post', $left_revision->ID ) || !current_user_can( 'read_post', $right_revision->ID ) ) {
-		    break;
-		}*/
 		
 		// If we're comparing a revision to itself, redirect to the 'view' page for that revision or the edit page for that post
 		if ( $left_revision->ID == $right_revision->ID ) {
@@ -673,6 +688,7 @@ class Wiki {
 			'</div>';
 		    }
 		}
+		
 		$new_content  = '<div class="incsub_wiki_top">' . $top . '</div>'. $new_content;
 		$new_content .= '<div class="incsub_wiki_content">' . $content . '</div>';
 		$new_content .= '<div class="incsub_wiki_bottom">' . $bottom . '</div>';
@@ -680,17 +696,6 @@ class Wiki {
 	}
 	
 	$new_content .= '</div>';
-	
-	if ( !comments_open() ) {
-	    $new_content .= '<style type="text/css">'.
-	    '#comments { display: none; }'.
-            '.comments { display: none; }'.
-	    '</style>';
-	} else {
-	    $new_content .= '<style type="text/css">'.
-	    '.hentry { margin-bottom: 5px; }'.
-	    '</style>';
-	}
 	
 	// Empty post_type means either malformed object found, or no valid parent was found.
 	if ( !$redirect && empty($post->post_type) ) {
@@ -1310,7 +1315,7 @@ class Wiki {
 	    'menu_name' => __('Wikis', $this->translation_domain)
 	);
 	
-	$supports = array( 'title', 'editor', 'author', 'revisions', 'comments', 'page-attributes');
+	$supports = array( 'title', 'editor', 'author', 'revisions', 'comments', 'page-attributes', 'thumbnail');
 	
 	register_post_type( 'incsub_wiki',
 	    array(
@@ -1323,7 +1328,8 @@ class Wiki {
 		'map_meta_cap' => true,
 		'query_var' => true,
 		'supports' => $supports,
-		'rewrite' => false
+		'rewrite' => false,
+		'has_archive' => true,
 	    )
 	);
 	
@@ -2030,3 +2036,5 @@ class WikiAdmin {
     }
 }
 $wiki = new Wiki();
+
+define('WIKI_PLUGIN_DIR', WP_PLUGIN_DIR . '/' . basename( dirname( __FILE__ ) ) . '/');
