@@ -1270,12 +1270,12 @@ class Wiki {
   		echo "<p>" . __('Nice Try...', $this->translation_domain) . "</p>";  //If accessed properly, this message doesn't appear.
   		return;
   	}
-	if (wp_verify_nonce($_POST['_wpnonce'], 'incsub_wiki-update-options')) {
+	if (isset($_POST['_wpnonce']) && wp_verify_nonce($_POST['_wpnonce'], 'incsub_wiki-update-options')) {
 	    $this->_options['default']['slug'] = $_POST['wiki_default']['slug'];
 	    update_option('wiki_default', $this->_options['default']);
 	    wp_redirect('edit.php?post_type=incsub_wiki&page=incsub_wiki&incsub_wiki_settings_saved=1');
 	}
-	if ($_GET['incsub_wiki_settings_saved'] == 1) {
+	if (isset($_GET['incsub_wiki_settings_saved']) && $_GET['incsub_wiki_settings_saved'] == 1) {
           echo '<div class="updated fade"><p>'.__('Settings saved.', $this->translation_domain).'</p></div>';
         }
 	?>
