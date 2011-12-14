@@ -72,7 +72,7 @@ class Wiki {
 	
 	add_filter('post_type_link', array(&$this, 'post_type_link'), 10, 3);
 	add_filter('name_save_pre', array(&$this, 'name_save'));
-	// add_filter('the_content', array(&$this, 'the_content'));
+	
 	add_filter('role_has_cap', array(&$this, 'role_has_cap'), 10, 3);
 	add_filter('user_has_cap', array(&$this, 'user_has_cap'), 10, 3);
 	
@@ -120,7 +120,11 @@ class Wiki {
 	      //otherwise load the page template and use our own theme
 	      $wp_query->is_single = null;
 	      $wp_query->is_page = 1;
-	      add_filter('the_content', array(&$this, 'theme'), 99 );
+	      if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'edit') {
+	        add_action('the_content', array(&$this, 'get_edit_form'));
+	      } else {
+		add_filter('the_content', array(&$this, 'theme'), 99 );
+	      }
 	    }
 	    $this->is_wiki_page = true;
 	}
@@ -171,7 +175,8 @@ class Wiki {
     function comments_open($open) {
 	global $post, $incsub_tab_check;
 	
-	if ($post->post_type == 'incsub_wiki' && $_REQUEST['action'] != 'discussion') {
+	$action = isset($_REQUEST['action'])?$_REQUEST['action']:'view';
+	if ($post->post_type == 'incsub_wiki' && ($action != 'discussion')) {
 	    if ($incsub_tab_check == 0 && !isset($_POST['submit'])) {
 		return false;
 	    }
@@ -412,29 +417,34 @@ class Wiki {
     function post_action() {
 	global $post;
 	
-	switch ($_REQUEST['action']) {
-	    case 'editpost':
-		if (wp_verify_nonce($_POST['_wpnonce'], "wiki-editpost_{$_POST['post_ID']}")) {
-		    $post_id = $this->edit_post($_POST);
-		    wp_redirect(get_permalink($post_id));
-		    exit();
-		}
-		break;
+	if (isset($_REQUEST['action'])) {
+	    switch ($_REQUEST['action']) {
+		case 'editpost':
+		    if (wp_verify_nonce($_POST['_wpnonce'], "wiki-editpost_{$_POST['post_ID']}")) {
+			$post_id = $this->edit_post($_POST);
+			wp_redirect(get_permalink($post_id));
+			exit();
+		    }
+		    break;
+	    }
 	}
     }
     
     function theme($content) {
 	global $post;
 	
-	$new_content  = '<div class="incsub_wiki incsub_wiki_single">';
-	$new_content .= '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
-	
 	$revision_id = isset($_REQUEST['revision'])?absint($_REQUEST['revision']):0;
     	$left        = isset($_REQUEST['left'])?absint($_REQUEST['left']):0;
 	$right       = isset($_REQUEST['right'])?absint($_REQUEST['right']):0;
 	$action      = isset($_REQUEST['action'])?$_REQUEST['action']:'view';
 	
-	$new_content .= $this->decider($content, $action, $revision_id, $left, $right);
+	$new_content = '';
+	if ($action != 'edit') {
+	    $new_content .= '<div class="incsub_wiki incsub_wiki_single">';
+	    $new_content .= '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
+	    
+	    $new_content .= $this->decider($content, $action, $revision_id, $left, $right);
+	}
 	
 	if ( !comments_open() ) {
 	    $new_content .= '<style type="text/css">'.
@@ -453,6 +463,8 @@ class Wiki {
     function decider($content, $action, $revision_id = null, $left = null, $right = null) {
 	global $post;
 	
+	$new_content = '';
+	
 	switch ($action) {
 	    case 'discussion':
 		break;
@@ -466,7 +478,7 @@ class Wiki {
 		if ( empty($post->ID) )
 		    wp_die( __('You attempted to edit an item that doesn&#8217;t exist. Perhaps it was deleted?') );
 		
-		if ( !current_user_can($post_type_object->cap->edit_post, $post_id) )
+		if ( !current_user_can($post_type_object->cap->edit_post, $post->ID) )
 		    wp_die( __('You are not allowed to edit this item.') );
 		    
 		if ( 'trash' == $post->post_status )
@@ -485,9 +497,10 @@ class Wiki {
 		}
 		
 		$title = $post_type_object->labels->edit_item;
-		$post = $this->post_to_edit($post_id);
+		$post = $this->post_to_edit($post->ID);
 		
-		$new_content .= $this->get_edit_form();
+		$new_content = '';
+		
 		break;
 	    case 'restore':
 		if ( !$revision = wp_get_post_revision( $revision_id ) )
@@ -698,7 +711,7 @@ class Wiki {
 	$new_content .= '</div>';
 	
 	// Empty post_type means either malformed object found, or no valid parent was found.
-	if ( !$redirect && empty($post->post_type) ) {
+	if ( isset($redirect) && !$redirect && empty($post->post_type) ) {
 	    $redirect = 'edit.php';
 	}
 	
@@ -844,41 +857,53 @@ class Wiki {
     function get_edit_form() {
 	global $post;
 	
-	$xcontent  = '<h3>'.__('Edit', $this->translation_domain).'</h3>';
-	$xcontent .= '<form action="'.get_permalink().'" method="post">';
+	echo '<div class="incsub_wiki incsub_wiki_single">';
+	echo '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
+	    
+	echo '<h3>'.__('Edit', $this->translation_domain).'</h3>';
+	echo  '<form action="'.get_permalink().'" method="post">';
 	if (isset($_REQUEST['eaction']) && $_REQUEST['eaction'] == 'create') {
 	    $edit_post = $this->get_default_post_to_edit($post->post_type, true, $post->ID);
-	    $xcontent .= '<input type="hidden" name="parent_id" id="parent_id" value="'.$post->ID.'" />';
-	    $xcontent .= '<input type="hidden" name="original_publish" id="original_publish" value="Publish" />';
-	    $xcontent .= '<input type="hidden" name="publish" id="publish" value="Publish" />';
+	    echo  '<input type="hidden" name="parent_id" id="parent_id" value="'.$post->ID.'" />';
+	    echo  '<input type="hidden" name="original_publish" id="original_publish" value="Publish" />';
+	    echo  '<input type="hidden" name="publish" id="publish" value="Publish" />';
 	} else {
 	    $edit_post = $post;
-	    $xcontent .= '<input type="hidden" name="parent_id" id="parent_id" value="'.$edit_post->post_parent.'" />';
-	    $xcontent .= '<input type="hidden" name="original_publish" id="original_publish" value="Update" />';
+	    echo  '<input type="hidden" name="parent_id" id="parent_id" value="'.$edit_post->post_parent.'" />';
+	    echo  '<input type="hidden" name="original_publish" id="original_publish" value="Update" />';
 	}
-	$xcontent .= '<input type="hidden" name="post_type" id="post_type" value="'.$edit_post->post_type.'" />';
-	$xcontent .= '<input type="hidden" name="post_ID" id="wiki_id" value="'.$edit_post->ID.'" />';
-	$xcontent .= '<input type="hidden" name="post_status" id="wiki_id" value="published" />';
-	$xcontent .= '<input type="hidden" name="comment_status" id="comment_status" value="open" />';
-	$xcontent .= '<input type="hidden" name="action" id="wiki_action" value="editpost" />';
-	$xcontent .= '<div><input type="text" name="post_title" id="wiki_title" value="'.$edit_post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
-	$xcontent .= '<div><textarea tabindex="2" name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea></div>';
-	$xcontent .= '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_{$edit_post->ID}").'" />';
+	echo  '<input type="hidden" name="post_type" id="post_type" value="'.$edit_post->post_type.'" />';
+	echo  '<input type="hidden" name="post_ID" id="wiki_id" value="'.$edit_post->ID.'" />';
+	echo  '<input type="hidden" name="post_status" id="wiki_id" value="published" />';
+	echo  '<input type="hidden" name="comment_status" id="comment_status" value="open" />';
+	echo  '<input type="hidden" name="action" id="wiki_action" value="editpost" />';
+	echo  '<div><input type="text" name="post_title" id="wiki_title" value="'.$edit_post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
+	echo  '<div>';
+	wp_editor($edit_post->post_content, 'wiki_content', array('textarea_name' => 'content', 'wpautop' => false));;
+	// <textarea tabindex="2" name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>
+	echo  '</div>';
+	echo  '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_{$edit_post->ID}").'" />';
 	
 	if (is_user_logged_in()) {
-	    $xcontent .= $this->get_meta_form();
+	    echo  $this->get_meta_form();
 	}
-	$xcontent .= '<div class="incsub_wiki_clear">';
-	$xcontent .= '<input type="submit" name="save" id="btn_save" value="'.__('Save', $this->translation_domain).'" />&nbsp;';
-	$xcontent .= '<a href="'.get_permalink().'?action=edit">'.__('Cancel', $this->translation_domain).'</a>';
-	$xcontent .= '</div>';
-	$xcontent .= '</form>';
+	echo  '<div class="incsub_wiki_clear">';
+	echo  '<input type="submit" name="save" id="btn_save" value="'.__('Save', $this->translation_domain).'" />&nbsp;';
+	echo  '<a href="'.get_permalink().'?action=edit">'.__('Cancel', $this->translation_domain).'</a>';
+	echo  '</div>';
+	echo  '</form>';
+	echo  '</div>';
 	
-	$wiki_admin = new WikiAdmin();
+	echo '<style type="text/css">'.
+	    '#comments { display: none; }'.
+            '.comments { display: none; }'.
+	'</style>';
 	
-	$wiki_admin->tiny_mce(true, array("editor_selector" => "incusb_wiki_tinymce"));
+	// $wiki_admin = new WikiAdmin();
 	
-	return $xcontent;
+	// $wiki_admin->tiny_mce(true, array("editor_selector" => "incusb_wiki_tinymce"));
+	
+	return '';
     }
     
     function get_meta_form() {
@@ -1036,7 +1061,7 @@ class Wiki {
 		if ( $left )
 		    $left_checked = $left == $revision->ID ? ' checked="checked"' : '';
 		else
-		    $left_checked = $right_checked ? ' checked="checked"' : ''; // [sic] (the next one)
+		    $left_checked = (isset($right_checked) && $right_checked) ? ' checked="checked"' : ''; // [sic] (the next one)
 		
 		$right_checked = $right == $revision->ID ? ' checked="checked"' : '';
 		
@@ -1432,7 +1457,7 @@ class Wiki {
 	    }
 	    
 	    $rewritereplace = array(
-	    	($post->post_name == "")?$post->id:$post->post_name
+	    	($post->post_name == "")?(isset($post->id)?$post->id:0):$post->post_name
 	    );
 	    $permalink = str_replace($rewritecode, $rewritereplace, $permalink);
 	} else {
@@ -2019,13 +2044,13 @@ class WikiAdmin {
 	    wp_print_styles('wp-jquery-ui-dialog');
 	}
 	
-	if ( in_array( 'wplink', $plugins, true ) ) {
+	/*if ( in_array( 'wplink', $plugins, true ) ) {
 	    require_once ABSPATH . 'wp-admin/includes/template.php';
             require_once ABSPATH . 'wp-admin/includes/internal-linking.php';
             ?><div style="display:none;"><?php wp_link_dialog(); ?></div><?php
             wp_print_scripts('wplink');
 	    wp_print_styles('wplink');
-        }
+        }*/	
     }
     
     function tiny_mce_preload_dialogs() { ?>
