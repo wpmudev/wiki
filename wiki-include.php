@@ -855,7 +855,7 @@ class Wiki {
     }
     
     function get_edit_form() {
-	global $post;
+	global $post, $wp_version;
 	
 	echo '<div class="incsub_wiki incsub_wiki_single">';
 	echo '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
@@ -879,8 +879,11 @@ class Wiki {
 	echo  '<input type="hidden" name="action" id="wiki_action" value="editpost" />';
 	echo  '<div><input type="text" name="post_title" id="wiki_title" value="'.$edit_post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
 	echo  '<div>';
-	wp_editor($edit_post->post_content, 'wiki_content', array('textarea_name' => 'content', 'wpautop' => false));;
-	// <textarea tabindex="2" name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>
+	if (version_compare($wp_version, "3.3") >= 0) {
+	    wp_editor($edit_post->post_content, 'wiki_content', array('textarea_name' => 'content', 'wpautop' => false));
+	} else {
+	    echo '<textarea tabindex="2" name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>';
+	}
 	echo  '</div>';
 	echo  '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_{$edit_post->ID}").'" />';
 	
@@ -1269,7 +1272,13 @@ class Wiki {
 	if (isset($_POST['_wpnonce']) && wp_verify_nonce($_POST['_wpnonce'], 'incsub_wiki-update-options')) {
 	    $this->_options['default']['slug'] = $_POST['wiki_default']['slug'];
 	    update_option('wiki_default', $this->_options['default']);
-	    wp_redirect('edit.php?post_type=incsub_wiki&page=incsub_wiki&incsub_wiki_settings_saved=1');
+	    ?>
+	    <script type="text/javascript">
+		window.location = '<?php echo admin_url('edit.php?post_type=incsub_wiki&page=incsub_wiki&incsub_wiki_settings_saved=1'); ?>'
+	    </script>
+	    <?php
+	    exit();
+
 	}
 	if (isset($_GET['incsub_wiki_settings_saved']) && $_GET['incsub_wiki_settings_saved'] == 1) {
           echo '<div class="updated fade"><p>'.__('Settings saved.', $this->translation_domain).'</p></div>';
