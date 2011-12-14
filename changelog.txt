@@ -5,13 +5,14 @@ Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
 
-1.0.9 - 
+1.0.9 - 12/14/2011
 ----------------------------------------------------------------------
 - Fixed: Wiki widget, only top level
 - Fixed: error in wp-includes/pluggable.php
 - Fixed: Pro Site incompatibility
 - Improved working with themes that use custom post types
 - Default template, use it to make your own wiki template
+- WordPress 3.3 compatibility
 
 1.0.8 - 09/18/2011
 ----------------------------------------------------------------------
