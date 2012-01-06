@@ -1423,13 +1423,13 @@ class Wiki {
     }
     
     function is_subscribed() {
-	global $wpdb, $current_user, $post;
+	global $wpdb, $current_user, $post, $blog_id;
 	
 	if (is_user_logged_in()) {
-	    if ($wpdb->get_var("SELECT ID FROM {$this->db_prefix}wiki_subscriptions WHERE wiki_id = {$post->ID} AND user_id = {$current_user->ID}") > 0) {
+	    if ($wpdb->get_var("SELECT ID FROM {$this->db_prefix}wiki_subscriptions WHERE blog_id = {$blog_id} AND wiki_id = {$post->ID} AND user_id = {$current_user->ID}") > 0) {
 		return true;
 	    }
-	} else if ($wpdb->get_var("SELECT ID FROM {$this->db_prefix}wiki_subscriptions WHERE wiki_id = {$post->ID} AND email = '{$_COOKIE['incsub_wiki_email']}'") > 0) {
+	} else if ($wpdb->get_var("SELECT ID FROM {$this->db_prefix}wiki_subscriptions WHERE blog_id = {$blog_id} AND wiki_id = {$post->ID} AND email = '{$_COOKIE['incsub_wiki_email']}'") > 0) {
 	    return true;
 	}
 	
@@ -1641,7 +1641,9 @@ Cancel subscription: CANCEL_URL";
 	    $wiki_notification_content[$key] = str_replace("\'","'",$wiki_notification_content[$key]);
 	}
 	
-	$query = "SELECT * FROM " . $this->db_prefix . "wiki_subscriptions WHERE wiki_id = {$post->ID}";
+	global $blog_id;
+
+	$query = "SELECT * FROM " . $this->db_prefix . "wiki_subscriptions WHERE blog_id = {$blog_id} AND wiki_id = {$post->ID}";
 	$subscription_emails = $wpdb->get_results( $query, ARRAY_A );
 	
 	if (count($subscription_emails) > 0){
