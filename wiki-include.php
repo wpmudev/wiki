@@ -680,7 +680,7 @@ class Wiki {
 		    $bottom .= '</div>';
 		}
 		
-		$notification_meta = get_post_custom($post->ID, array('incsub_wiki_email_notification' => 'enabled'));
+		$notification_meta = get_post_meta($post->ID, 'incsub_wiki_email_notification', array('enabled'));
 		
 		if (((is_array($notification_meta) && $notification_meta[0] == 'enabled') || ($notification_meta == 'enabled')) && !$this->is_subscribed()) {
 		    if (is_user_logged_in()) {
