@@ -1211,6 +1211,10 @@ class Wiki {
     function install() {
         global $wpdb;
         
+	if (get_option('wiki_version', false) == $this->current_version) {
+	    return;
+	}
+	
         /**
          * WordPress database upgrade/creation functions
          */
@@ -1241,7 +1245,8 @@ class Wiki {
 	if (!is_array($this->_options['default'])) {
 		 $this->_options['default'] = array('slug' => 'wiki');
 	}
-
+	
+	update_option('wiki_version', $this->current_version);
 	update_option('wiki_default', $this->_options['default']);
     }
     
@@ -1328,6 +1333,8 @@ class Wiki {
 	} else {
 	    load_plugin_textdomain($this->translation_domain, false, dirname(plugin_basename(__FILE__)).'/languages');
 	}
+	
+	$this->install();
 	
 	wp_register_script('incsub_wiki_js', plugins_url('wiki/js/wiki-utils.js'), null, $this->current_version);
 	
