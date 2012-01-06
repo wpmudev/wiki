@@ -682,7 +682,7 @@ class Wiki {
 		
 		$notification_meta = get_post_custom($post->ID, array('incsub_wiki_email_notification' => 'enabled'));
 		
-		if ($notification_meta['incsub_wiki_email_notification'][0] == 'enabled' && !$this->is_subscribed()) {
+		if (((is_array($notification_meta) && $notification_meta[0] == 'enabled') || ($notification_meta == 'enabled')) && !$this->is_subscribed()) {
 		    if (is_user_logged_in()) {
 			    $bottom .= '<div class="incsub_wiki-subscribe"><a href="'.wp_nonce_url(add_query_arg(array('post_id' => $post->ID, 'subscribe' => 1)), "wiki-subscribe-wiki_$post->ID" ).'">'.__('Notify me of changes', $this->translation_domain).'</a></div>';
 		    } else {
