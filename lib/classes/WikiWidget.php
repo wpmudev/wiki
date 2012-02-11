@@ -28,7 +28,14 @@ class WikiWidget extends WP_Widget {
 	<?php echo $before_widget; ?>
 	<?php echo $before_title . $title . $after_title; ?>
 	<?php
-	    $wiki_posts = get_posts('post_parent=0&post_type=incsub_wiki&order_by=menu_order&numberposts=100000');
+	    $wiki_posts = get_posts(
+			    array(
+				'post_parent' => 0,
+				'post_type' => 'incsub_wiki',
+				'order_by' => 'menu_order',
+				'order' => 'ASC',
+				'numberposts' => 100000
+			    ));
 	?>
 	    <ul>
 		<?php
@@ -49,7 +56,13 @@ class WikiWidget extends WP_Widget {
     function _print_sub_wikis($wiki) {
 	global $post;
 	
-	$sub_wikis = get_posts('post_parent='.$wiki->ID.'&post_type=incsub_wiki&order_by=menu_order&numberposts=100000');
+	$sub_wikis = get_posts(
+			array('post_parent' => $wiki->ID,
+			      'post_type' => 'incsub_wiki',
+			      'orderby' => 'menu_order',
+			      'order' => 'ASC',
+			      'numberposts' => 100000
+			));
 	?>
 	<ul>
 	    <?php

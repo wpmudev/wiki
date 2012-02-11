@@ -653,10 +653,10 @@ class Wiki {
 		
 		$top .= join(get_option("incsub_meta_seperator", " > "), $crumbs);
 		
-		$children = get_children(
+		$children = get_posts(
 				array('post_parent' => $post->ID,
 				      'post_type' => 'incsub_wiki',
-				      'order_by' => 'menu_order',
+				      'orderby' => 'menu_order',
 				      'order' => 'ASC'));
 		
 		$crumbs = array();
