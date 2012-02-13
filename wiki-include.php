@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.1.2';
+    var $current_version = '1.1.3';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -657,7 +657,8 @@ class Wiki {
 				array('post_parent' => $post->ID,
 				      'post_type' => 'incsub_wiki',
 				      'orderby' => 'menu_order',
-				      'order' => 'ASC'));
+				      'order' => 'ASC',
+				      'numberposts' => 100000));
 		
 		$crumbs = array();
 		foreach($children as $child) {
