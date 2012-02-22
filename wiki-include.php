@@ -1202,6 +1202,7 @@ class Wiki {
     
     function role_has_cap($capabilities, $cap, $name) {
 	// nothing to do
+	return $capabilities;
     }
     
     /**
