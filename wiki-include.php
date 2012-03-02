@@ -185,7 +185,7 @@ class Wiki {
 		
 		$action = isset($_REQUEST['action'])?$_REQUEST['action']:'view';
 		if ($post->post_type == 'incsub_wiki' && ($action != 'discussion')) {
-			if ($incsub_tab_check == 0 && !isset($_POST['submit'])) {
+			if ($incsub_tab_check == 0 && !isset($_POST['submit']) && !isset($_POST['Submit'])) {
 			return false;
 			}
 		}
