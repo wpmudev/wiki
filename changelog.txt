@@ -8,6 +8,7 @@ Change Log:
 1.1.5 - 03/02/2012
 ----------------------------------------------------------------------
 - Add wiki breadcrumbs into title tags
+- Fixed: Unable to comment on wiki discussion section
 
 1.1.4 - 02/22/2012
 ----------------------------------------------------------------------
