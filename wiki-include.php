@@ -197,21 +197,24 @@ class Wiki {
 		
 		$tmp_title = "";
 		$bc = 0;
-		foreach($post->ancestors as $parent_pid) {
-			if ($bc >= $this->_options['default']['breadcrumbs_in_title']) {
-				break;
+		if (is_array($post->ancestors)) {
+			foreach($post->ancestors as $parent_pid) {
+				if ($bc >= $this->_options['default']['breadcrumbs_in_title']) {
+					break;
+				}
+				$parent_post = get_post($parent_pid);
+				
+				if ($seplocation == 'left') {
+					$tmp_title .= " {$sep} ";
+				}
+				$tmp_title .= $parent_post->post_title;
+				if ($seplocation == 'right') {
+					$tmp_title .= " {$sep} ";
+				}
+				$bc++;
 			}
-			$parent_post = get_post($parent_pid);
-			
-			if ($seplocation == 'left') {
-				$tmp_title .= " {$sep} ";
-			}
-			$tmp_title .= $parent_post->post_title;
-			if ($seplocation == 'right') {
-				$tmp_title .= " {$sep} ";
-			}
-			$bc++;
 		}
+		
 		$tmp_title = trim($tmp_title);
 		if (!empty($tmp_title)) {
 			if ($seplocation == 'left') {
