@@ -134,7 +134,7 @@ class Wiki {
 				if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'edit') {
 					add_action('the_content', array(&$this, 'get_edit_form'));
 				} else {
-					add_filter('the_content', array(&$this, 'theme'), 99 );
+					add_filter('the_content', array(&$this, 'theme'), 1 );
 				}
 			}
 			$this->is_wiki_page = true;

@@ -8,6 +8,8 @@ Change Log:
 1.1.7 - 03/08/2012
 ----------------------------------------------------------------------
 - Wiki Archives (for wiki/). Style with archive-incsub_wiki.php in your theme
+- Note that the subwiki list shows up below the Bookmarks and ads plugin's output
+- Cancel will exit the edit screen
 
 1.1.6 - 03/04/2012
 ----------------------------------------------------------------------
