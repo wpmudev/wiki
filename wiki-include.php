@@ -94,13 +94,16 @@ class Wiki {
 			$this->db_prefix = $wpdb->prefix;
 		}
 		
-		$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki', 'breadcrumbs_in_title' => 0));
+		$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki', 'breadcrumbs_in_title' => 0, 'sub_wiki_name' => __('Sub Wikis', $this->translation_domain)));
 		
 		if (!isset($this->_options['default']['slug'])) {
 			$this->_options['default']['slug'] = 'wiki';
 		}
 		if (!isset($this->_options['default']['breadcrumbs_in_title'])) {
 			$this->_options['default']['breadcrumbs_in_title'] = 0;
+		}
+		if (!isset($this->_options['default']['sub_wiki_name'])) {
+			$this->_options['default']['sub_wiki_name'] = __('Sub Wikis', $this->translation_domain);
 		}
     }
     
@@ -711,7 +714,7 @@ class Wiki {
 					$crumbs[] = '<a href="'.get_permalink($child->ID).'" class="incsub_wiki_crumbs">'.$child->post_title.'</a>';
 				}
 				
-				$bottom = "<h3>".__('Sub Wikis', $this->translation_domain) . "</h3> <ul><li>";
+				$bottom = "<h3>" . $this->_options['default']['sub_wiki_name'] . "</h3> <ul><li>";
 				
 				$bottom .= join("</li><li>", $crumbs);
 				
@@ -943,7 +946,7 @@ class Wiki {
 		}
 		echo  '<div class="incsub_wiki_clear">';
 		echo  '<input type="submit" name="save" id="btn_save" value="'.__('Save', $this->translation_domain).'" />&nbsp;';
-		echo  '<a href="'.get_permalink().'?action=edit">'.__('Cancel', $this->translation_domain).'</a>';
+		echo  '<a href="'.get_permalink().'">'.__('Cancel', $this->translation_domain).'</a>';
 		echo  '</div>';
 		echo  '</form>';
 		echo  '</div>';
@@ -1290,7 +1293,7 @@ class Wiki {
 		dbDelta($sql_main);
 		
 		// Default chat options
-		$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki', 'breadcrumbs_in_title' => 0));
+		$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki', 'breadcrumbs_in_title' => 0, 'sub_wiki_name' => __('Sub Wikis', $this->translation_domain)));
 	
 		if (!is_array($this->_options['default'])) {
 			 $this->_options['default'] = array('slug' => 'wiki', 'breadcrumbs_in_title' => 0);
@@ -1301,6 +1304,9 @@ class Wiki {
 		}
 		if (!isset($this->_options['default']['breadcrumbs_in_title'])) {
 			$this->_options['default']['breadcrumbs_in_title'] = 0;
+		}
+		if (!isset($this->_options['default']['sub_wiki_name'])) {
+			$this->_options['default']['sub_wiki_name'] = __('Sub Wikis', $this->translation_domain);
 		}
 		
 		update_option('wiki_version', $this->current_version);
@@ -1334,6 +1340,7 @@ class Wiki {
 		if (isset($_POST['_wpnonce']) && wp_verify_nonce($_POST['_wpnonce'], 'incsub_wiki-update-options')) {
 			$this->_options['default']['slug'] = $_POST['wiki_default']['slug'];
 			$this->_options['default']['breadcrumbs_in_title'] = intval($_POST['wiki_default']['breadcrumbs_in_title']);
+			$this->_options['default']['sub_wiki_name'] = $_POST['wiki_default']['sub_wiki_name'];
 			update_option('wiki_default', $this->_options['default']);
 			?>
 			<script type="text/javascript">
@@ -1358,7 +1365,11 @@ class Wiki {
 				</tr>
 				<tr valign="top">
 					<td><label for="incsub_wiki-breadcrumbs_in_title"><?php _e('Number of breadcrumbs to add to title', $this->translation_domain); ?></label> </td>
-					<td><input type="input" size="2" id="incsub_wiki-breadcrumbs_in_title" name="wiki_default[breadcrumbs_in_title]" value="<?php print $this->_options['default']['breadcrumbs_in_title']; ?>" /></td>
+					<td><input type="text" size="2" id="incsub_wiki-breadcrumbs_in_title" name="wiki_default[breadcrumbs_in_title]" value="<?php print $this->_options['default']['breadcrumbs_in_title']; ?>" /></td>
+				</tr>
+				<tr valign="top">
+					<td><label for="incsub_wiki-sub_wiki_name"><?php _e('What do you want to call Sub Wikis?', $this->translation_domain); ?></label> </td>
+					<td><input type="text" size="20" id="incsub_wiki-sub_wiki_name" name="wiki_default[sub_wiki_name]" value="<?php print $this->_options['default']['sub_wiki_name']; ?>" /></td>
 				</tr>
 			</table>
 			
@@ -1468,6 +1479,7 @@ class Wiki {
 		if (isset($_POST['wiki_default']) && wp_verify_nonce($_POST['_wpnonce'], 'incsub_wiki-update-options')) {
 			$this->_options['default']['slug'] = $_POST['wiki_default']['slug'];
 			$this->_options['default']['breadcrumbs_in_title'] = intval($_POST['wiki_default']['breadcrumbs_in_title']);
+			$this->_options['default']['sub_wiki_name'] = $_POST['wiki_default']['sub_wiki_name'];
 			update_option('wiki_default', $this->_options['default']);
 			wp_redirect('edit.php?post_type=incsub_wiki&page=incsub_wiki&incsub_wiki_settings_saved=1');
 			exit();
