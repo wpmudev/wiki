@@ -1635,8 +1635,12 @@ class Wiki {
     
     function widgets_init() {
 		include_once 'lib/classes/WikiWidget.php';
+		include_once 'lib/classes/NewWikisWidget.php';
+		include_once 'lib/classes/PopularWikisWidget.php';
 		
 		register_widget('WikiWidget');
+		register_widget('NewWikisWidget');
+		register_widget('PopularWikisWidget');
     }
     
     function send_notifications($post_id) {
