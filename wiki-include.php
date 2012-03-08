@@ -157,6 +157,7 @@ class Wiki {
 		$new_rules = array();
 		
 		$new_rules[$this->_options['default']['slug'].'/(.+?)/?$'] = 'index.php?incsub_wiki=$matches[1]';
+		$new_rules['(.+?)/'.$this->_options['default']['slug'].'/(.+?)/?$'] = 'index.php?incsub_wiki=$matches[2]';
 		
 		return array_merge($new_rules, $rules);
     }
@@ -170,7 +171,9 @@ class Wiki {
 			$value = array();
 		
 		$array_key = $this->_options['default']['slug'].'/(.+?)/?$';
-		if ( !array_key_exists($array_key, $value) ) {
+		$array_key_1 = '(.+?)/'.$this->_options['default']['slug'].'/(.+?)/?$';
+		if ( !array_key_exists($array_key, $value) ||
+			 !array_key_exists($array_key_1, $value) ) {
 			$this->flush_rewrite();
 		}
     }
@@ -197,7 +200,7 @@ class Wiki {
 		
 		$tmp_title = "";
 		$bc = 0;
-		if (is_array($post->ancestors)) {
+		if (isset($post->ancestors) && is_array($post->ancestors)) {
 			foreach($post->ancestors as $parent_pid) {
 				if ($bc >= $this->_options['default']['breadcrumbs_in_title']) {
 					break;
@@ -1415,17 +1418,17 @@ class Wiki {
 		
 		register_post_type( 'incsub_wiki',
 			array(
-			'labels' => $labels,
-			'public' => true,
-			'show_ui' => true,
-			'publicly_queryable' => true,
-			'capability_type' => 'wiki',
-			'hierarchical' => true,
-			'map_meta_cap' => true,
-			'query_var' => true,
-			'supports' => $supports,
-			'rewrite' => false,
-			'has_archive' => true,
+				'labels' => $labels,
+				'public' => true,
+				'show_ui' => true,
+				'publicly_queryable' => true,
+				'capability_type' => 'wiki',
+				'hierarchical' => true,
+				'map_meta_cap' => true,
+				'query_var' => true,
+				'supports' => $supports,
+				'has_archive' => true,
+				'rewrite' => array( 'slug' => $this->_options['default']['slug'], 'with_front' => false ),
 			)
 		);
 		
