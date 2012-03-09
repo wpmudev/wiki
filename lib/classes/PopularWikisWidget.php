@@ -41,7 +41,6 @@ class PopularWikisWidget extends WP_Widget {
 	    <ul>
 		<?php
 		foreach ($wiki_posts as $wiki) {
-		    print_r($wiki);
 		?>
 		    <li><a href="<?php print get_permalink($wiki->ID); ?>" class="<?php print ($wiki->ID == $post->ID)?'current':''; ?>" ><?php print $wiki->post_title; ?></a>
 			<?php print ($hierarchical == 'yes')?$this->_print_sub_wikis($wiki):''; ?>
