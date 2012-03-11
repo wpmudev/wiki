@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.1.7';
+    var $current_version = '1.1.8';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -153,8 +153,8 @@ class Wiki {
 		}
 		return $wp_rich_edit;
     }
-    
-    function add_rewrite_rules($rules){
+	
+	function add_rewrite_rules($rules){
 		$settings = get_option('incsub_wiki_settings');
 		
 		$new_rules = array();
@@ -168,17 +168,19 @@ class Wiki {
     function check_rewrite_rules($value) {
 		//prevent an infinite loop
 		if ( ! post_type_exists( 'incsub_wiki' ) )
-			return;
+			return $value;
 		
 		if (!is_array($value))
 			$value = array();
 		
 		$array_key = $this->_options['default']['slug'].'/(.+?)/?$';
 		$array_key_1 = '(.+?)/'.$this->_options['default']['slug'].'/(.+?)/?$';
-		if ( !array_key_exists($array_key, $value) ||
-			 !array_key_exists($array_key_1, $value) ) {
+		if ( !array_key_exists($array_key, $value)
+			|| !array_key_exists($array_key_1, $value)
+			 ) {
 			$this->flush_rewrite();
 		}
+		return $value;
     }
     
     function flush_rewrite() {
@@ -1426,6 +1428,55 @@ class Wiki {
 		);
 		
 		$supports = array( 'title', 'editor', 'author', 'revisions', 'comments', 'page-attributes', 'thumbnail');
+		
+		// Has to come before the 'incsub_wiki' post type definition
+		register_taxonomy( 'incsub_wiki_category', 'incsub_wiki', array(
+			'hierarchical' => true,
+			'rewrite' => array( 'slug' => $this->_options['default']['slug'] . '/' . WIKI_SLUG_CATEGORIES, 'with_front' => false ),
+			'capabilities' => array(
+				'manage_terms' => 'edit_others_wikis',
+				'edit_terms' => 'edit_others_wikis',
+				'delete_terms' => 'edit_others_wikis',
+				'assign_terms' => 'edit_published_wikis'
+			),
+			'labels' => array(
+				'name' => __( 'Wiki Categories', $this->translation_domain ),
+				'singular_name' => __( 'Wiki Category', $this->translation_domain ),
+				'search_items' => __( 'Search Wiki Categories', $this->translation_domain ),
+				'all_items' => __( 'All Wiki Categories', $this->translation_domain ),
+				'parent_item' => __( 'Parent Wiki Category', $this->translation_domain ),
+				'parent_item_colon' => __( 'Parent Wiki Category:', $this->translation_domain ),
+				'edit_item' => __( 'Edit Wiki Category', $this->translation_domain ),
+				'update_item' => __( 'Update Wiki Category', $this->translation_domain ),
+				'add_new_item' => __( 'Add New Wiki Category', $this->translation_domain ),
+				'new_item_name' => __( 'New Wiki Category Name', $this->translation_domain ),
+			)
+		) );
+
+		// Has to come before the 'incsub_wiki' post type definition
+		register_taxonomy( 'incsub_wiki_tag', 'incsub_wiki', array(
+			'rewrite' => array( 'slug' => $this->_options['default']['slug'] . '/' . WIKI_SLUG_TAGS, 'with_front' => false ),
+			'capabilities' => array(
+				'manage_terms' => 'edit_others_wikis',
+				'edit_terms' => 'edit_others_wikis',
+				'delete_terms' => 'edit_others_wikis',
+				'assign_terms' => 'edit_published_wikis'
+			),
+			'labels' => array(
+				'name'			=> __( 'Wiki Tags', $this->translation_domain ),
+				'singular_name'	=> __( 'Wiki Tag', $this->translation_domain ),
+				'search_items'	=> __( 'Search Wiki Tags', $this->translation_domain ),
+				'popular_items'	=> __( 'Popular Wiki Tags', $this->translation_domain ),
+				'all_items'		=> __( 'All Wiki Tags', $this->translation_domain ),
+				'edit_item'		=> __( 'Edit Wiki Tag', $this->translation_domain ),
+				'update_item'	=> __( 'Update Wiki Tag', $this->translation_domain ),
+				'add_new_item'	=> __( 'Add New Wiki Tag', $this->translation_domain ),
+				'new_item_name'	=> __( 'New Wiki Tag Name', $this->translation_domain ),
+				'separate_items_with_commas'	=> __( 'Separate wiki tags with commas', $this->translation_domain ),
+				'add_or_remove_items'			=> __( 'Add or remove wiki tags', $this->translation_domain ),
+				'choose_from_most_used'			=> __( 'Choose from the most used wiki tags', $this->translation_domain ),
+			)
+		) );
 		
 		register_post_type( 'incsub_wiki',
 			array(

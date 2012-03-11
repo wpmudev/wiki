@@ -5,7 +5,7 @@
  Description: Add a wiki to your blog
  Author: S H Mohanjith (Incsub)
  WDP ID: 168
- Version: 1.1.7
+ Version: 1.1.8
  Author URI: http://premium.wpmudev.org
  Text Domain: incsub_wiki
 */
@@ -13,6 +13,9 @@
  * @global	object	$wiki	Convenient access to the chat object
  */
 global $wiki;
+
+define( 'WIKI_SLUG_TAGS', 'tags' );
+define( 'WIKI_SLUG_CATEGORIES', 'categories' );
 
 if (!defined('WIKI_DEMO_FOR_NON_SUPPORTER'))
     define('WIKI_DEMO_FOR_NON_SUPPORTER', false);
