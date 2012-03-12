@@ -35,7 +35,7 @@ class Wiki {
      * @return	string			Table name complete with prefixes
      */
     function tablename($table) {
-	global $wpdb;
+		global $wpdb;
     	// We use a single table for all chats accross the network
     	return $wpdb->base_prefix.'wiki_'.$table;
     }
@@ -84,6 +84,9 @@ class Wiki {
 		
 		add_filter('user_can_richedit', array(&$this, 'user_can_richedit'));
 		add_filter('wp_title', array(&$this, 'wp_title'), 10, 3);
+		add_filter('the_title', array(&$this, 'the_title'), 10, 2);
+		
+		add_filter('404_template', array( &$this, 'not_found_template' ) );
 		
 		// White list the options to make sure non super admin can save wiki options 
 		// add_filter('whitelist_options', array(&$this, 'whitelist_options'));
@@ -106,38 +109,73 @@ class Wiki {
 			$this->_options['default']['sub_wiki_name'] = __('Sub Wikis', $this->translation_domain);
 		}
     }
+	
+	function the_title( $title, $id ) {
+		global $wp_query, $post;
+		
+		if (!$id && get_query_var('post_type') == 'incsub_wiki' && $wp_query->is_404) {
+			$post_type_object = get_post_type_object( get_query_var('post_type') );
+			
+			if (current_user_can($post_type_object->cap->publish_posts)) {
+				return ucwords(get_query_var('name'));
+			}
+		}
+		
+		return $title;
+	}
+	
+	function not_found_template( $path ) {
+		global $wp_query;
+
+		if ( 'incsub_wiki' != get_query_var( 'post_type' ) )
+			return $path;
+		
+		$post_type_object = get_post_type_object( get_query_var('post_type') );
+		
+		if (current_user_can($post_type_object->cap->publish_posts)) {
+			$type = reset( explode( '_', current_filter() ) );
+			$file = basename( $path );
+			if ( empty( $path ) || "$type.php" == $file ) {
+				// A more specific template was not found, so load the default one
+				$path = WIKI_PLUGIN_DIR . "default-templates/$type-incsub_wiki.php";
+			}
+		}
+		return $path;
+	}
     
     function load_templates() {
 		global $wp_query, $post;
 		
-		if ($wp_query->is_single && $post->post_type == 'incsub_wiki') {
-			//check for custom theme templates
-			$wiki_name = $post->post_name;
-			$wiki_id = (int) $post->ID;
-			$templates = array();
-			
-			if ( $wiki_name ) {
-				$templates[] = "incsub_wiki-$wiki_name.php";
-			}
-			
-			if ( $wiki_id ) {
-				$templates[] = "incsub_wiki-$wiki_id.php";
-			}
-			$templates[] = "incsub_wiki.php";
-			
-			if ($this->wiki_template = locate_template($templates)) {
-				add_filter('template_include', array(&$this, 'custom_template') );
-			} else {
-			  //otherwise load the page template and use our own theme
-				$wp_query->is_single = null;
-				$wp_query->is_page = 1;
-				if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'edit') {
-					add_action('the_content', array(&$this, 'get_edit_form'));
-				} else {
-					add_filter('the_content', array(&$this, 'theme'), 1 );
+		if (get_query_var('post_type') == 'incsub_wiki') {
+			if ($wp_query->is_single) {
+				//check for custom theme templates
+				$wiki_name = $post->post_name;
+				$wiki_id = (int) $post->ID;
+				$templates = array();
+				
+				if ( $wiki_name ) {
+					$templates[] = "incsub_wiki-$wiki_name.php";
 				}
+				
+				if ( $wiki_id ) {
+					$templates[] = "incsub_wiki-$wiki_id.php";
+				}
+				$templates[] = "incsub_wiki.php";
+				
+				if ($this->wiki_template = locate_template($templates)) {
+					add_filter('template_include', array(&$this, 'custom_template') );
+				} else {
+				  //otherwise load the page template and use our own theme
+					$wp_query->is_single = null;
+					$wp_query->is_page = 1;
+					if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'edit') {
+						add_action('the_content', array(&$this, 'get_edit_form'));
+					} else {
+						add_filter('the_content', array(&$this, 'theme'), 1 );
+					}
+				}
+				$this->is_wiki_page = true;
 			}
-			$this->is_wiki_page = true;
 		}
     }
     
@@ -146,9 +184,9 @@ class Wiki {
     }
     
     function user_can_richedit($wp_rich_edit) {
-		global $post;
+		global $wp_query;
 		
-		if ($post->post_type) {
+		if (get_query_var('post_type') == 'incsub_wiki') {
 			return true;
 		}
 		return $wp_rich_edit;
@@ -189,47 +227,60 @@ class Wiki {
     }
     
     function comments_open($open) {
-		global $post, $incsub_tab_check;
+		global $wp_query, $incsub_tab_check;
 		
 		$action = isset($_REQUEST['action'])?$_REQUEST['action']:'view';
-		if ($post->post_type == 'incsub_wiki' && ($action != 'discussion')) {
+		if (get_query_var('post_type') == 'incsub_wiki' && ($action != 'discussion')) {
 			if ($incsub_tab_check == 0 && !isset($_POST['submit']) && !isset($_POST['Submit'])) {
-			return false;
+				return false;
 			}
 		}
 		return $open;
     }
 	
 	function wp_title($title, $sep, $seplocation) {
-		global $post;
+		global $post, $wp_query;
 		
 		$tmp_title = "";
 		$bc = 0;
-		if (isset($post->ancestors) && is_array($post->ancestors)) {
-			foreach($post->ancestors as $parent_pid) {
-				if ($bc >= $this->_options['default']['breadcrumbs_in_title']) {
-					break;
-				}
-				$parent_post = get_post($parent_pid);
-				
+		if (!$post && get_query_var('post_type') == 'incsub_wiki' && $wp_query->is_404) {
+			$post_type_object = get_post_type_object( get_query_var('post_type') );
+			if (current_user_can($post_type_object->cap->publish_posts)) {
+				$tmp_title = ucwords(get_query_var('name'));
 				if ($seplocation == 'left') {
-					$tmp_title .= " {$sep} ";
+					$title = " {$sep} {$tmp_title}";
 				}
-				$tmp_title .= $parent_post->post_title;
 				if ($seplocation == 'right') {
-					$tmp_title .= " {$sep} ";
+					$title = " {$tmp_title} {$sep} ";
 				}
-				$bc++;
 			}
-		}
-		
-		$tmp_title = trim($tmp_title);
-		if (!empty($tmp_title)) {
-			if ($seplocation == 'left') {
-				$title = "{$title} {$tmp_title} ";
+		} else {
+			if (isset($post->ancestors) && is_array($post->ancestors)) {
+				foreach($post->ancestors as $parent_pid) {
+					if ($bc >= $this->_options['default']['breadcrumbs_in_title']) {
+						break;
+					}
+					$parent_post = get_post($parent_pid);
+					
+					if ($seplocation == 'left') {
+						$tmp_title .= " {$sep} ";
+					}
+					$tmp_title .= $parent_post->post_title;
+					if ($seplocation == 'right') {
+						$tmp_title .= " {$sep} ";
+					}
+					$bc++;
+				}
 			}
-			if ($seplocation == 'right') {
-				$title .= " {$tmp_title} ";
+			
+			$tmp_title = trim($tmp_title);
+			if (!empty($tmp_title)) {
+				if ($seplocation == 'left') {
+					$title = "{$title} {$tmp_title} ";
+				}
+				if ($seplocation == 'right') {
+					$title .= " {$tmp_title} ";
+				}
 			}
 		}
 		
@@ -909,6 +960,53 @@ class Wiki {
 		
 		update_post_meta( $post->ID, '_edit_lock', $lock );
     }
+	
+	function get_new_wiki_form() {
+		global $wp_version, $wp_query;
+		
+		echo '<div class="incsub_wiki incsub_wiki_single">';
+		echo '<div class="incsub_wiki_tabs incsub_wiki_tabs_top"><div class="incsub_wiki_clear"></div></div>';
+			
+		echo '<h3>'.__('Edit', $this->translation_domain).'</h3>';
+		echo  '<form action="" method="post">';
+		//if (isset($_REQUEST['eaction']) && $_REQUEST['eaction'] == 'create') {
+			$edit_post = $this->get_default_post_to_edit(get_query_var('post_type'), true, 0);
+			echo  '<input type="hidden" name="parent_id" id="parent_id" value="'.$edit_post->ID.'" />';
+			echo  '<input type="hidden" name="original_publish" id="original_publish" value="Publish" />';
+			echo  '<input type="hidden" name="publish" id="publish" value="Publish" />';
+		//}
+		echo  '<input type="hidden" name="post_type" id="post_type" value="'.$edit_post->post_type.'" />';
+		echo  '<input type="hidden" name="post_ID" id="wiki_id" value="'.$edit_post->ID.'" />';
+		echo  '<input type="hidden" name="post_status" id="wiki_id" value="published" />';
+		echo  '<input type="hidden" name="comment_status" id="comment_status" value="open" />';
+		echo  '<input type="hidden" name="action" id="wiki_action" value="editpost" />';
+		echo  '<div><input type="text" name="post_title" id="wiki_title" value="'.$edit_post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
+		echo  '<div>';
+		if (version_compare($wp_version, "3.3") >= 0) {
+			wp_editor($edit_post->post_content, 'wiki_content', array('textarea_name' => 'content', 'wpautop' => false));
+		} else {
+			echo '<textarea tabindex="2" name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>';
+		}
+		echo  '</div>';
+		echo  '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_{$edit_post->ID}").'" />';
+		
+		if (is_user_logged_in()) {
+			// echo  $this->get_meta_form();
+		}
+		echo  '<div class="incsub_wiki_clear">';
+		echo  '<input type="submit" name="save" id="btn_save" value="'.__('Save', $this->translation_domain).'" />&nbsp;';
+		echo  '<a href="'.get_permalink().'">'.__('Cancel', $this->translation_domain).'</a>';
+		echo  '</div>';
+		echo  '</form>';
+		echo  '</div>';
+		
+		echo '<style type="text/css">'.
+			'#comments { display: none; }'.
+			'.comments { display: none; }'.
+		'</style>';
+		
+		return '';
+	}
     
     function get_edit_form() {
 		global $post, $wp_version;
@@ -973,7 +1071,7 @@ class Wiki {
     }
     
     function tabs() {
-		global $post, $incsub_tab_check;
+		global $post, $incsub_tab_check, $wp_query;
 		
 		$incsub_tab_check = 1;
 		
@@ -1019,9 +1117,9 @@ class Wiki {
 		$tabs .= '<li class="'.join(' ', $classes['history']).'" ><a href="'.get_permalink().$seperator.'action=history" >' . __('History', $this->translation_domain) . '</a></li>';
 		$tabs .= '</ul>';
 		
-		$post_type_object = get_post_type_object( $post->post_type );
+		$post_type_object = get_post_type_object( get_query_var('post_type') );
 		
-		if (current_user_can($post_type_object->cap->edit_post, $post->ID)) {
+		if ($post && current_user_can($post_type_object->cap->edit_post, $post->ID)) {
 			$tabs .= '<ul class="right">';
 			$tabs .= '<li class="'.join(' ', $classes['edit']).'" ><a href="'.get_permalink().$seperator.'action=edit" >' . __('Edit', $this->translation_domain) . '</a></li>';
 			if (is_user_logged_in()) {
@@ -1640,7 +1738,7 @@ class Wiki {
 		return $content;
 		}
 		
-		function notifications_meta_box($echo = true) {
+	function notifications_meta_box($echo = true) {
 		global $post;
 		$settings = get_option('incsub_wiki_settings');
 		$meta = get_post_custom($post->ID);
@@ -1697,7 +1795,7 @@ class Wiki {
     function send_notifications($post_id) {
 		global $wpdb;
 		
-		// We do autosaves manually with wp_create_post_autosave()
+		// We do autosaves manually with wp_publish_posts_autosave()
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
             return;
 	
@@ -1806,5 +1904,3 @@ Cancel subscription: CANCEL_URL";
 }
 
 $wiki = new Wiki();
-
-define('WIKI_PLUGIN_DIR', WP_PLUGIN_DIR . '/' . basename( dirname( __FILE__ ) ) . '/');

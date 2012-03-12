@@ -16,6 +16,7 @@ global $wiki;
 
 define( 'WIKI_SLUG_TAGS', 'tags' );
 define( 'WIKI_SLUG_CATEGORIES', 'categories' );
+define( 'WIKI_PLUGIN_DIR', WP_PLUGIN_DIR . '/' . basename( dirname( __FILE__ ) ) . '/' );
 
 if (!defined('WIKI_DEMO_FOR_NON_SUPPORTER'))
     define('WIKI_DEMO_FOR_NON_SUPPORTER', false);

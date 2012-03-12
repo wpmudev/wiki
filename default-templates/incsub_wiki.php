@@ -6,7 +6,7 @@ get_header( 'wiki' );
     <div id="content">
         <div class="padder">
             <div id="wiki-page-wrapper">
-                <h2 class="pagetitle"><?php the_title(); ?></h2>
+                <h1 class="entry-title"><?php the_title(); ?></h1>
                 
                 <div class="incsub_wiki incsub_wiki_single">
                     <div class="incsub_wiki_tabs incsub_wiki_tabs_top"><?php echo $wiki->tabs(); ?><div class="incsub_wiki_clear"></div></div>
