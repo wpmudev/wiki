@@ -71,6 +71,7 @@ class Wiki {
 		add_action('template_redirect', array(&$this, 'load_templates') );
 		
 		add_filter('post_type_link', array(&$this, 'post_type_link'), 10, 3);
+		add_filter('term_link', array(&$this, 'term_link'), 10, 3);
 		add_filter('name_save_pre', array(&$this, 'name_save'));
 		
 		add_filter('role_has_cap', array(&$this, 'role_has_cap'), 10, 3);
@@ -97,13 +98,16 @@ class Wiki {
 			$this->db_prefix = $wpdb->prefix;
 		}
 		
-		$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki', 'breadcrumbs_in_title' => 0, 'sub_wiki_name' => __('Sub Wikis', $this->translation_domain)));
+		$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki', 'breadcrumbs_in_title' => 0, 'wiki_name' => __('Wikis', $this->translation_domain), 'sub_wiki_name' => __('Sub Wikis', $this->translation_domain)));
 		
 		if (!isset($this->_options['default']['slug'])) {
 			$this->_options['default']['slug'] = 'wiki';
 		}
 		if (!isset($this->_options['default']['breadcrumbs_in_title'])) {
 			$this->_options['default']['breadcrumbs_in_title'] = 0;
+		}
+		if (!isset($this->_options['default']['wiki_name'])) {
+			$this->_options['default']['wiki_name'] = __('Wikis', $this->translation_domain);
 		}
 		if (!isset($this->_options['default']['sub_wiki_name'])) {
 			$this->_options['default']['sub_wiki_name'] = __('Sub Wikis', $this->translation_domain);
@@ -126,7 +130,7 @@ class Wiki {
 	
 	function not_found_template( $path ) {
 		global $wp_query;
-
+		
 		if ( 'incsub_wiki' != get_query_var( 'post_type' ) )
 			return $path;
 		
@@ -197,8 +201,9 @@ class Wiki {
 		
 		$new_rules = array();
 		
+		$new_rules[$this->_options['default']['slug'].'/'.WIKI_SLUG_CATEGORIES.'/(.+?)/?$'] = 'index.php?incsub_wiki_category=$matches[1]';
+		$new_rules[$this->_options['default']['slug'].'/'.WIKI_SLUG_TAGS.'/(.+?)/?$'] = 'index.php?incsub_wiki_tag=$matches[1]';
 		$new_rules[$this->_options['default']['slug'].'/(.+?)/?$'] = 'index.php?incsub_wiki=$matches[1]';
-		$new_rules['(.+?)/'.$this->_options['default']['slug'].'/(.+?)/?$'] = 'index.php?incsub_wiki=$matches[2]';
 		
 		return array_merge($new_rules, $rules);
     }
@@ -211,12 +216,16 @@ class Wiki {
 		if (!is_array($value))
 			$value = array();
 		
-		$array_key = $this->_options['default']['slug'].'/(.+?)/?$';
-		$array_key_1 = '(.+?)/'.$this->_options['default']['slug'].'/(.+?)/?$';
-		if ( !array_key_exists($array_key, $value)
-			|| !array_key_exists($array_key_1, $value)
-			 ) {
-			$this->flush_rewrite();
+		$array_keys = array();
+		$array_keys[] = $this->_options['default']['slug'].'/(.+?)/?$';
+		$array_keys[] = $this->_options['default']['slug'].'/'.WIKI_SLUG_TAGS.'/(.+?)/?$';
+		$array_keys[] = $this->_options['default']['slug'].'/'.WIKI_SLUG_CATEGORIES.'/(.+?)/?$';
+		
+		foreach ($array_keys as $array_key) {
+			if ( !array_key_exists($array_key, $value)
+				 ) {
+				$this->flush_rewrite();
+			}
 		}
 		return $value;
     }
@@ -742,7 +751,7 @@ class Wiki {
 			default:
 				$top = "";
 				
-				$crumbs = array();
+				$crumbs = array('<a href="'.site_url($this->_options['default']['slug']).'" class="incsub_wiki_crumbs">'.$this->_options['default']['wiki_name'].'</a>');
 				foreach($post->ancestors as $parent_pid) {
 					$parent_post = get_post($parent_pid);
 					
@@ -754,6 +763,14 @@ class Wiki {
 				sort($crumbs);
 				
 				$top .= join(get_option("incsub_meta_seperator", " > "), $crumbs);
+				
+				$taxonomy = "";
+				
+				$category_list = get_the_term_list( 0, 'incsub_wiki_category', __( 'Category:', $this->translation_domain ) . ' <span class="incsub_wiki-category">', '', '</span> ' );
+				$tags_list = get_the_term_list( 0, 'incsub_wiki_tag', __( 'Tags:', $this->translation_domain ) . ' <span class="incsub_wiki-tags">', ' ', '</span> ' );
+				
+				$taxonomy .= apply_filters('the_terms', $category_list, 'incsub_wiki_category', __( 'Category:', $this->translation_domain ) . ' <span class="incsub_wiki-category">', '', '</span> ' );
+				$taxonomy .= apply_filters('the_terms', $tags_list, 'incsub_wiki_tag', __( 'Tags:', $this->translation_domain ) . ' <span class="incsub_wiki-tags">', ' ', '</span> ' );
 				
 				$children = get_posts(
 						array('post_parent' => $post->ID,
@@ -772,9 +789,10 @@ class Wiki {
 				$bottom .= join("</li><li>", $crumbs);
 				
 				if (count($crumbs) == 0) {
-					$bottom = "";
+					$bottom = $taxonomy;
 				} else {
 					$bottom .= "</li></ul>";
+					$bottom = "{$taxonomy} {$bottom}";
 				}
 				
 				$revisions = wp_get_post_revisions($post->ID);
@@ -962,7 +980,7 @@ class Wiki {
     }
 	
 	function get_new_wiki_form() {
-		global $wp_version, $wp_query;
+		global $wp_version, $wp_query, $edit_post;
 		
 		echo '<div class="incsub_wiki incsub_wiki_single">';
 		echo '<div class="incsub_wiki_tabs incsub_wiki_tabs_top"><div class="incsub_wiki_clear"></div></div>';
@@ -991,7 +1009,7 @@ class Wiki {
 		echo  '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_{$edit_post->ID}").'" />';
 		
 		if (is_user_logged_in()) {
-			// echo  $this->get_meta_form();
+			echo  $this->get_meta_form();
 		}
 		echo  '<div class="incsub_wiki_clear">';
 		echo  '<input type="submit" name="save" id="btn_save" value="'.__('Save', $this->translation_domain).'" />&nbsp;';
@@ -1009,7 +1027,7 @@ class Wiki {
 	}
     
     function get_edit_form() {
-		global $post, $wp_version;
+		global $post, $wp_version, $edit_post;
 		
 		echo '<div class="incsub_wiki incsub_wiki_single">';
 		echo '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
@@ -1064,12 +1082,13 @@ class Wiki {
 		
 		$content  = '';
 		
+		$content .= '<div class="incsub_wiki_meta_box">'.$this->wiki_taxonomies(false).'</div>';
 		$content .= '<div class="incsub_wiki_meta_box">'.$this->notifications_meta_box(false).'</div>';
 		$content .= '<div class="incsub_wiki_meta_box">'.$this->privileges_meta_box(false).'</div>';
 		
 		return $content;
     }
-    
+	
     function tabs() {
 		global $post, $incsub_tab_check, $wp_query;
 		
@@ -1393,7 +1412,7 @@ class Wiki {
 		dbDelta($sql_main);
 		
 		// Default chat options
-		$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki', 'breadcrumbs_in_title' => 0, 'sub_wiki_name' => __('Sub Wikis', $this->translation_domain)));
+		$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki', 'breadcrumbs_in_title' => 0, 'wiki_name' => __('Wikis', $this->translation_domain), 'sub_wiki_name' => __('Sub Wikis', $this->translation_domain)));
 	
 		if (!is_array($this->_options['default'])) {
 			 $this->_options['default'] = array('slug' => 'wiki', 'breadcrumbs_in_title' => 0);
@@ -1404,6 +1423,9 @@ class Wiki {
 		}
 		if (!isset($this->_options['default']['breadcrumbs_in_title'])) {
 			$this->_options['default']['breadcrumbs_in_title'] = 0;
+		}
+		if (!isset($this->_options['default']['wiki_name'])) {
+			$this->_options['default']['wiki_name'] = __('Wikis', $this->translation_domain);
 		}
 		if (!isset($this->_options['default']['sub_wiki_name'])) {
 			$this->_options['default']['sub_wiki_name'] = __('Sub Wikis', $this->translation_domain);
@@ -1440,6 +1462,7 @@ class Wiki {
 		if (isset($_POST['_wpnonce']) && wp_verify_nonce($_POST['_wpnonce'], 'incsub_wiki-update-options')) {
 			$this->_options['default']['slug'] = $_POST['wiki_default']['slug'];
 			$this->_options['default']['breadcrumbs_in_title'] = intval($_POST['wiki_default']['breadcrumbs_in_title']);
+			$this->_options['default']['wiki_name'] = $_POST['wiki_default']['wiki_name'];
 			$this->_options['default']['sub_wiki_name'] = $_POST['wiki_default']['sub_wiki_name'];
 			update_option('wiki_default', $this->_options['default']);
 			?>
@@ -1466,6 +1489,10 @@ class Wiki {
 				<tr valign="top">
 					<td><label for="incsub_wiki-breadcrumbs_in_title"><?php _e('Number of breadcrumbs to add to title', $this->translation_domain); ?></label> </td>
 					<td><input type="text" size="2" id="incsub_wiki-breadcrumbs_in_title" name="wiki_default[breadcrumbs_in_title]" value="<?php print $this->_options['default']['breadcrumbs_in_title']; ?>" /></td>
+				</tr>
+				<tr valign="top">
+					<td><label for="incsub_wiki-wiki_name"><?php _e('What do you want to call Wikis?', $this->translation_domain); ?></label> </td>
+					<td><input type="text" size="20" id="incsub_wiki-wiki_name" name="wiki_default[wiki_name]" value="<?php print $this->_options['default']['wiki_name']; ?>" /></td>
 				</tr>
 				<tr valign="top">
 					<td><label for="incsub_wiki-sub_wiki_name"><?php _e('What do you want to call Sub Wikis?', $this->translation_domain); ?></label> </td>
@@ -1592,6 +1619,16 @@ class Wiki {
 			)
 		);
 		
+		$wiki_cat_structure = '/'.$this->_options['default']['slug']. '/' . WIKI_SLUG_CATEGORIES . '/%wiki_category%';
+		
+		$wp_rewrite->add_rewrite_tag("%wiki_category%", '(.+?)', "incsub_wiki_category=");
+		$wp_rewrite->add_permastruct('incsub_wiki_category', $wiki_cat_structure, false);
+		
+		$wiki_tag_structure = '/'.$this->_options['default']['slug'] . '/' . WIKI_SLUG_TAGS . '/%wiki_tag%';
+		
+		$wp_rewrite->add_rewrite_tag("%wiki_tag%", '(.+?)', "incsub_wiki_tag=");
+		$wp_rewrite->add_permastruct('incsub_wiki_tag', $wiki_tag_structure, false);
+		
 		$wiki_structure = '/'.$this->_options['default']['slug'].'/%wiki%';
 		
 		$wp_rewrite->add_rewrite_tag("%wiki%", '(.+?)', "incsub_wiki=");
@@ -1628,6 +1665,7 @@ class Wiki {
 		if (isset($_POST['wiki_default']) && wp_verify_nonce($_POST['_wpnonce'], 'incsub_wiki-update-options')) {
 			$this->_options['default']['slug'] = $_POST['wiki_default']['slug'];
 			$this->_options['default']['breadcrumbs_in_title'] = intval($_POST['wiki_default']['breadcrumbs_in_title']);
+			$this->_options['default']['wiki_name'] = $_POST['wiki_default']['wiki_name'];
 			$this->_options['default']['sub_wiki_name'] = $_POST['wiki_default']['sub_wiki_name'];
 			update_option('wiki_default', $this->_options['default']);
 			wp_redirect('edit.php?post_type=incsub_wiki&page=incsub_wiki&incsub_wiki_settings_saved=1');
@@ -1673,7 +1711,7 @@ class Wiki {
 		$post = get_post($post_id);
 		
 		$rewritecode = array(
-			'%wiki%',
+			'%wiki%'
 		);
 		
 		if ($post->post_type == 'incsub_wiki' && '' != $permalink) {
@@ -1702,6 +1740,26 @@ class Wiki {
 		
 		return $permalink;
     }
+	
+	function term_link($termlink, $term, $taxonomy) {
+		$rewritecode = array(
+			'%wiki_category%',
+			'%wiki_tag%'
+		);
+		
+		if (preg_match('/^incsub_wiki_/', $term->taxonomy) > 0 && '' != $termlink) {
+			
+			$rewritereplace = array(
+				($term->slug == "")?(isset($term->term_id)?$term->term_id:0):$term->slug,
+				($term->slug == "")?(isset($term->term_id)?$term->term_id:0):$term->slug
+			);
+			$termlink = str_replace($rewritecode, $rewritereplace, $termlink);
+		} else {
+			// if they're not using the fancy permalink option
+		}
+		
+		return $termlink;
+    }
     
     function name_save($post_name) {
 		if ($_POST['post_type'] == 'incsub_wiki' && empty($post_name)) {
@@ -1712,9 +1770,12 @@ class Wiki {
     }
     
     function privileges_meta_box($echo = true) {
-		global $post;
+		global $post, $edit_post;
+		
+		$wiki = isset($post)?$post:$edit_post;
+		
 		$settings = get_option('incsub_wiki_settings');
-		$meta = get_post_custom($post->ID);
+		$meta = get_post_custom($wiki->ID);
 		
 		$content  = '';
 		$current_privileges = unserialize($meta["incsub_wiki_privileges"][0]);
@@ -1736,13 +1797,55 @@ class Wiki {
 			echo $content;
 		}
 		return $content;
-		}
+	}
+	
+	function wiki_taxonomies($echo = true) {
+		global $post, $edit_post;
 		
+		$wiki = isset($post)?$post:$edit_post;
+		$wiki_tags = wp_get_object_terms( $wiki->ID, 'incsub_wiki_tag', array( 'fields' => 'names' ) );
+
+		$wiki_cats = wp_get_object_terms( $wiki->ID, 'incsub_wiki_category', array( 'fields' => 'ids' ) );
+		$wiki_cat = empty( $wiki_cats ) ? false : reset( $wiki_cats );
+		
+		$content  = '';
+		$content .= '<table id="wiki-taxonomies">';
+		$content .= '<tr>';
+		$content .= '<td id="wiki-category-td">';
+		$content .= wp_dropdown_categories( array(
+						'orderby' => 'name',
+						'order' => 'ASC',
+						'taxonomy' => 'incsub_wiki_category',
+						'selected' => $wiki_cat,
+						'hide_empty' => false,
+						'hierarchical' => true,
+						'name' => 'incsub_wiki_category',
+						'class' => '',
+						'echo' => false,
+						'show_option_none' => __( 'Select category...', $this->translation_domain)
+					) );
+		$content .= '</td>';
+		$content .= '<td id="wiki-tags-label">';
+		$content .= '<label for="wiki-tags">'.__('Tags:', $this->translation_domain).'</label>';
+		$content .= '</td>';
+		$content .= '<td id="wiki-tags-td">';
+		$content .= '<input type="text" id="incsub_wiki-tags" name="incsub_wiki_tags" value="'. implode( ', ', $wiki_tags ).'" />';
+		$content .= '</td></tr></table>';
+		
+		if ($echo) {
+			echo $content;
+		}
+		return $content;
+	}
+    
 	function notifications_meta_box($echo = true) {
-		global $post;
+		global $post, $edit_post;
+		
+		$wiki = isset($post)?$post:$edit_post;
+		
 		$settings = get_option('incsub_wiki_settings');
-		$meta = get_post_custom($post->ID);
-		if ($meta == array()) {
+		$meta = get_post_custom($wiki->ID);
+		if (!isset($meta["incsub_wiki_email_notification"])) {
 			$meta = array('incsub_wiki_email_notification' => array('enabled'));
 		}
 		$content  = '';
@@ -1762,6 +1865,24 @@ class Wiki {
 		//skip quick edit
 		if ( defined('DOING_AJAX') )
 			return;
+		
+		if ( $post->post_type == "incsub_wiki" && isset( $_POST['incsub_wiki_tags'] ) ) {
+			$wiki_tags = $_POST['incsub_wiki_tags'];
+			
+			wp_set_post_terms( $post_id, $wiki_tags, 'incsub_wiki_tag' );
+			
+			//for any other plugin to hook into
+			do_action( 'incsub_wiki_save_taxonomy_tags', $post_id, $wiki_tags );
+		}
+		
+		if ( $post->post_type == "incsub_wiki" && isset( $_POST['incsub_wiki_tags'] ) ) {
+			$wiki_category = array( (int) $_POST['incsub_wiki_category'] );
+			
+			wp_set_post_terms( $post_id, $wiki_category, 'incsub_wiki_category' );
+			
+			//for any other plugin to hook into
+			do_action( 'incsub_wiki_save_taxonomy_category', $post_id, $wiki_category );
+		}
 		  
 		if ( $post->post_type == "incsub_wiki" && isset( $_POST['incsub_wiki_privileges_meta'] ) ) {
 			$meta = get_post_custom($post_id);
