@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.1.9';
+    var $current_version = '1.2.0';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -114,7 +114,7 @@ class Wiki {
 		}
     }
 	
-	function the_title( $title, $id ) {
+	function the_title( $title, $id = false ) {
 		global $wp_query, $post;
 		
 		if (!$id && get_query_var('post_type') == 'incsub_wiki' && $wp_query->is_404) {
