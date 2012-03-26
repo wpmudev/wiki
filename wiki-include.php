@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.0';
+    var $current_version = '1.2.1';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -987,18 +987,24 @@ class Wiki {
 			
 		echo '<h3>'.__('Edit', $this->translation_domain).'</h3>';
 		echo  '<form action="" method="post">';
-		//if (isset($_REQUEST['eaction']) && $_REQUEST['eaction'] == 'create') {
-			$edit_post = $this->get_default_post_to_edit(get_query_var('post_type'), true, 0);
-			echo  '<input type="hidden" name="parent_id" id="parent_id" value="'.$edit_post->ID.'" />';
-			echo  '<input type="hidden" name="original_publish" id="original_publish" value="Publish" />';
-			echo  '<input type="hidden" name="publish" id="publish" value="Publish" />';
-		//}
+		$edit_post = $this->get_default_post_to_edit(get_query_var('post_type'), true, 0);
+		$slug_parts = preg_split('/\//', $wp_query->query_vars['incsub_wiki']);
+		
+		for ($i=count($slug_parts)-1; $i>=0; $i--) {
+			$parent_post = get_posts(array('post_name' => $slug_parts[$i], 'post_type' => 'incsub_wiki', 'post_status' => 'publish'));
+			if (is_array($parent_post) && count($parent_post) > 0) {
+				break;
+			}
+		}
+		echo  '<input type="hidden" name="parent_id" id="parent_id" value="'.$parent_post[0]->ID.'" />';
+		echo  '<input type="hidden" name="original_publish" id="original_publish" value="Publish" />';
+		echo  '<input type="hidden" name="publish" id="publish" value="Publish" />';
 		echo  '<input type="hidden" name="post_type" id="post_type" value="'.$edit_post->post_type.'" />';
 		echo  '<input type="hidden" name="post_ID" id="wiki_id" value="'.$edit_post->ID.'" />';
 		echo  '<input type="hidden" name="post_status" id="wiki_id" value="published" />';
 		echo  '<input type="hidden" name="comment_status" id="comment_status" value="open" />';
 		echo  '<input type="hidden" name="action" id="wiki_action" value="editpost" />';
-		echo  '<div><input type="text" name="post_title" id="wiki_title" value="'.$edit_post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
+		echo  '<div><input type="hidden" name="post_title" id="wiki_title" value="'.ucwords(get_query_var('name')).'" class="incsub_wiki_title" size="30" /></div>';
 		echo  '<div>';
 		if (version_compare($wp_version, "3.3") >= 0) {
 			wp_editor($edit_post->post_content, 'wiki_content', array('textarea_name' => 'content', 'wpautop' => false));
