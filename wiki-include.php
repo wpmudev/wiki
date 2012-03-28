@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.1';
+    var $current_version = '1.2.2';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -990,13 +990,17 @@ class Wiki {
 		$edit_post = $this->get_default_post_to_edit(get_query_var('post_type'), true, 0);
 		$slug_parts = preg_split('/\//', $wp_query->query_vars['incsub_wiki']);
 		
-		for ($i=count($slug_parts)-1; $i>=0; $i--) {
-			$parent_post = get_posts(array('post_name' => $slug_parts[$i], 'post_type' => 'incsub_wiki', 'post_status' => 'publish'));
-			if (is_array($parent_post) && count($parent_post) > 0) {
-				break;
+		if (count($slug_parts) > 1) {
+			for ($i=count($slug_parts)-1; $i>=0; $i--) {
+				$parent_post = get_posts(array('name' => $slug_parts[$i], 'post_type' => 'incsub_wiki', 'post_status' => 'publish'));
+				if (is_array($parent_post) && count($parent_post) > 0) {
+					break;
+				}
 			}
+			$parent_post = $parent_post[0];
 		}
-		echo  '<input type="hidden" name="parent_id" id="parent_id" value="'.$parent_post[0]->ID.'" />';
+		
+		echo  '<input type="hidden" name="parent_id" id="parent_id" value="'.$parent_post->ID.'" />';
 		echo  '<input type="hidden" name="original_publish" id="original_publish" value="Publish" />';
 		echo  '<input type="hidden" name="publish" id="publish" value="Publish" />';
 		echo  '<input type="hidden" name="post_type" id="post_type" value="'.$edit_post->post_type.'" />';
