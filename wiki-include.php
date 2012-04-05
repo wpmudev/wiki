@@ -1028,6 +1028,13 @@ class Wiki {
 		echo  '</form>';
 		echo  '</div>';
 		
+		if (version_compare($wp_version, "3.3") < 0) {
+			require_once 'lib/classes/WikiAdmin.php';
+			
+			$wiki_admin = new WikiAdmin();
+			$wiki_admin->tiny_mce(true, array("editor_selector" => "incusb_wiki_tinymce"));
+		}
+		
 		echo '<style type="text/css">'.
 			'#comments { display: none; }'.
 			'.comments { display: none; }'.
@@ -1078,6 +1085,13 @@ class Wiki {
 		echo  '</div>';
 		echo  '</form>';
 		echo  '</div>';
+		
+		if (version_compare($wp_version, "3.3") < 0) {
+			require_once 'lib/classes/WikiAdmin.php';
+			
+			$wiki_admin = new WikiAdmin();
+			$wiki_admin->tiny_mce(true, array("editor_selector" => "incusb_wiki_tinymce"));
+		}
 		
 		echo '<style type="text/css">'.
 			'#comments { display: none; }'.
