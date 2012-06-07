@@ -89,6 +89,8 @@ class Wiki {
 		
 		add_filter('404_template', array( &$this, 'not_found_template' ) );
 		
+		add_action('pre_get_posts', array( &$this, 'pre_get_posts' ) );
+		
 		// White list the options to make sure non super admin can save wiki options 
 		// add_filter('whitelist_options', array(&$this, 'whitelist_options'));
 		
@@ -187,6 +189,14 @@ class Wiki {
 		return $this->wiki_template;
     }
     
+    function pre_get_posts( $query ) {
+	    if( $query->is_main_query() && !is_admin() && !empty($query->query_vars['incsub_wiki']) && preg_match('/\//', $query->query_vars['incsub_wiki']) == 0 ) {
+			$query->query_vars['post_parent'] = 0;
+	    }
+
+
+    }
+    
     function user_can_richedit($wp_rich_edit) {
 		global $wp_query;
 		
@@ -196,14 +206,14 @@ class Wiki {
 		return $wp_rich_edit;
     }
 	
-	function add_rewrite_rules($rules){
+    function add_rewrite_rules($rules){
 		$settings = get_option('incsub_wiki_settings');
 		
 		$new_rules = array();
 		
-		$new_rules[$this->_options['default']['slug'].'/'.WIKI_SLUG_CATEGORIES.'/(.+?)/?$'] = 'index.php?incsub_wiki_category=$matches[1]';
-		$new_rules[$this->_options['default']['slug'].'/'.WIKI_SLUG_TAGS.'/(.+?)/?$'] = 'index.php?incsub_wiki_tag=$matches[1]';
-		$new_rules[$this->_options['default']['slug'].'/(.+?)/?$'] = 'index.php?incsub_wiki=$matches[1]';
+		$new_rules[$this->_options['default']['slug'].'/'.WIKI_SLUG_CATEGORIES.'/(.?.+?)/?$'] = 'index.php?incsub_wiki_category=$matches[1]';
+		$new_rules[$this->_options['default']['slug'].'/'.WIKI_SLUG_TAGS.'/(.?.+?)/?$'] = 'index.php?incsub_wiki_tag=$matches[1]';
+		$new_rules[$this->_options['default']['slug'].'/(.?.+?)/?$'] = 'index.php?incsub_wiki=$matches[1]';
 		
 		return array_merge($new_rules, $rules);
     }
@@ -217,13 +227,12 @@ class Wiki {
 			$value = array();
 		
 		$array_keys = array();
-		$array_keys[] = $this->_options['default']['slug'].'/(.+?)/?$';
-		$array_keys[] = $this->_options['default']['slug'].'/'.WIKI_SLUG_TAGS.'/(.+?)/?$';
-		$array_keys[] = $this->_options['default']['slug'].'/'.WIKI_SLUG_CATEGORIES.'/(.+?)/?$';
+		$array_keys[] = $this->_options['default']['slug'].'/(.?.+?)/?$';
+		$array_keys[] = $this->_options['default']['slug'].'/'.WIKI_SLUG_TAGS.'/(.?.+?)/?$';
+		$array_keys[] = $this->_options['default']['slug'].'/'.WIKI_SLUG_CATEGORIES.'/(.?.+?)/?$';
 		
 		foreach ($array_keys as $array_key) {
-			if ( !array_key_exists($array_key, $value)
-				 ) {
+			if ( !array_key_exists($array_key, $value) ) {
 				$this->flush_rewrite();
 			}
 		}
@@ -1643,19 +1652,19 @@ class Wiki {
 			)
 		);
 		
-		$wiki_cat_structure = '/'.$this->_options['default']['slug']. '/' . WIKI_SLUG_CATEGORIES . '/%wiki_category%';
+		$wiki_cat_structure = '/'.$this->_options['default']['slug']. '/' . WIKI_SLUG_CATEGORIES . '/%incsub_wiki_category%';
 		
-		$wp_rewrite->add_rewrite_tag("%wiki_category%", '(.+?)', "incsub_wiki_category=");
+		$wp_rewrite->add_rewrite_tag("%incsub_wiki_category%", '(.?.+?)', "incsub_wiki_category=");
 		$wp_rewrite->add_permastruct('incsub_wiki_category', $wiki_cat_structure, false);
 		
-		$wiki_tag_structure = '/'.$this->_options['default']['slug'] . '/' . WIKI_SLUG_TAGS . '/%wiki_tag%';
+		$wiki_tag_structure = '/'.$this->_options['default']['slug'] . '/' . WIKI_SLUG_TAGS . '/%incsub_wiki_tag%';
 		
-		$wp_rewrite->add_rewrite_tag("%wiki_tag%", '(.+?)', "incsub_wiki_tag=");
+		$wp_rewrite->add_rewrite_tag("%incsub_wiki_tag%", '(.?.+?)', "incsub_wiki_tag=");
 		$wp_rewrite->add_permastruct('incsub_wiki_tag', $wiki_tag_structure, false);
 		
-		$wiki_structure = '/'.$this->_options['default']['slug'].'/%wiki%';
+		$wiki_structure = '/'.$this->_options['default']['slug'].'/%incsub_wiki%';
 		
-		$wp_rewrite->add_rewrite_tag("%wiki%", '(.+?)', "incsub_wiki=");
+		$wp_rewrite->add_rewrite_tag("%incsub_wiki%", '(.?.+?)', "incsub_wiki=");
 		$wp_rewrite->add_permastruct('incsub_wiki', $wiki_structure, false);
 		
 		if (isset($_REQUEST['subscribe']) && wp_verify_nonce($_REQUEST['_wpnonce'], "wiki-subscribe-wiki_{$_REQUEST['post_id']}")) {
@@ -1715,7 +1724,7 @@ class Wiki {
 			if ($wpdb->get_var("SELECT ID FROM {$this->db_prefix}wiki_subscriptions WHERE blog_id = {$blog_id} AND wiki_id = {$post->ID} AND user_id = {$current_user->ID}") > 0) {
 			return true;
 			}
-		} else if ($wpdb->get_var("SELECT ID FROM {$this->db_prefix}wiki_subscriptions WHERE blog_id = {$blog_id} AND wiki_id = {$post->ID} AND email = '{$_COOKIE['incsub_wiki_email']}'") > 0) {
+		} else if (isset($_COOKIE['incsub_wiki_email']) && $wpdb->get_var("SELECT ID FROM {$this->db_prefix}wiki_subscriptions WHERE blog_id = {$blog_id} AND wiki_id = {$post->ID} AND email = '{$_COOKIE['incsub_wiki_email']}'") > 0) {
 			return true;
 		}
 		
@@ -1735,7 +1744,7 @@ class Wiki {
 		$post = get_post($post_id);
 		
 		$rewritecode = array(
-			'%wiki%'
+			'%incsub_wiki%'
 		);
 		
 		if ($post->post_type == 'incsub_wiki' && '' != $permalink) {
@@ -1750,7 +1759,7 @@ class Wiki {
 			
 			if (!empty($uri)) {
 				$uri .= '/';
-				$permalink = str_replace('%wiki%', "{$uri}%wiki%", $permalink);
+				$permalink = str_replace('%incsub_wiki%', "{$uri}%incsub_wiki%", $permalink);
 			}
 			}
 			
@@ -1767,8 +1776,8 @@ class Wiki {
 	
 	function term_link($termlink, $term, $taxonomy) {
 		$rewritecode = array(
-			'%wiki_category%',
-			'%wiki_tag%'
+			'%incsub_wiki_category%',
+			'%incsub_wiki_tag%'
 		);
 		
 		if (preg_match('/^incsub_wiki_/', $term->taxonomy) > 0 && '' != $termlink) {
