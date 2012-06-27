@@ -989,7 +989,7 @@ class Wiki {
     }
 	
 	function get_new_wiki_form() {
-		global $wp_version, $wp_query, $edit_post;
+		global $wp_version, $wp_query, $edit_post, $post_id, $post_ID;
 		
 		echo '<div class="incsub_wiki incsub_wiki_single">';
 		echo '<div class="incsub_wiki_tabs incsub_wiki_tabs_top"><div class="incsub_wiki_clear"></div></div>';
@@ -997,6 +997,10 @@ class Wiki {
 		echo '<h3>'.__('Edit', $this->translation_domain).'</h3>';
 		echo  '<form action="" method="post">';
 		$edit_post = $this->get_default_post_to_edit(get_query_var('post_type'), true, 0);
+		
+		$post_id = $edit_post->ID;
+		$post_ID = $post_id;
+		
 		$slug_parts = preg_split('/\//', $wp_query->query_vars['incsub_wiki']);
 		
 		if (count($slug_parts) > 1) {
@@ -1020,9 +1024,9 @@ class Wiki {
 		echo  '<div><input type="hidden" name="post_title" id="wiki_title" value="'.ucwords(get_query_var('name')).'" class="incsub_wiki_title" size="30" /></div>';
 		echo  '<div>';
 		if (version_compare($wp_version, "3.3") >= 0) {
-			wp_editor($edit_post->post_content, 'wiki_content', array('textarea_name' => 'content', 'wpautop' => false));
+			wp_editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content', 'wpautop' => false));
 		} else {
-			echo '<textarea tabindex="2" name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>';
+			echo '<textarea tabindex="2" name="content" id="wikicontent" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>';
 		}
 		echo  '</div>';
 		echo  '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_{$edit_post->ID}").'" />';
@@ -1053,7 +1057,7 @@ class Wiki {
 	}
     
     function get_edit_form() {
-		global $post, $wp_version, $edit_post;
+		global $post, $wp_version, $edit_post, $post_id, $post_ID;
 		
 		echo '<div class="incsub_wiki incsub_wiki_single">';
 		echo '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
@@ -1070,6 +1074,10 @@ class Wiki {
 			echo  '<input type="hidden" name="parent_id" id="parent_id" value="'.$edit_post->post_parent.'" />';
 			echo  '<input type="hidden" name="original_publish" id="original_publish" value="Update" />';
 		}
+		
+		$post_id = $edit_post->ID;
+		$post_ID = $post_id;
+		
 		echo  '<input type="hidden" name="post_type" id="post_type" value="'.$edit_post->post_type.'" />';
 		echo  '<input type="hidden" name="post_ID" id="wiki_id" value="'.$edit_post->ID.'" />';
 		echo  '<input type="hidden" name="post_status" id="wiki_id" value="published" />';
@@ -1078,9 +1086,9 @@ class Wiki {
 		echo  '<div><input type="text" name="post_title" id="wiki_title" value="'.$edit_post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
 		echo  '<div>';
 		if (version_compare($wp_version, "3.3") >= 0) {
-			wp_editor($edit_post->post_content, 'wiki_content', array('textarea_name' => 'content', 'wpautop' => false));
+			wp_editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content', 'wpautop' => false));
 		} else {
-			echo '<textarea tabindex="2" name="content" id="wiki_content" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>';
+			echo '<textarea tabindex="2" name="content" id="wikicontent" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>';
 		}
 		echo  '</div>';
 		echo  '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_{$edit_post->ID}").'" />';
