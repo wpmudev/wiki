@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.2';
+    var $current_version = '1.2.2.3';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -141,9 +141,13 @@ class Wiki {
 		if (current_user_can($post_type_object->cap->publish_posts)) {
 			$type = reset( explode( '_', current_filter() ) );
 			$file = basename( $path );
+			
 			if ( empty( $path ) || "$type.php" == $file ) {
 				// A more specific template was not found, so load the default one
 				$path = WIKI_PLUGIN_DIR . "default-templates/$type-incsub_wiki.php";
+			}
+			if ( file_exists( get_stylesheet_directory() . "/$type-incsub_wiki.php" ) ) {
+				$path = get_stylesheet_directory() . "/$type-incsub_wiki.php";
 			}
 		}
 		return $path;
@@ -619,7 +623,7 @@ class Wiki {
 				$title = $post_type_object->labels->edit_item;
 				$post = $this->post_to_edit($post->ID);
 				
-				$new_content = '';
+				$new_content = $this->get_edit_form(false);
 				
 				break;
 			case 'restore':
@@ -842,7 +846,7 @@ class Wiki {
 				$redirect = false;
 		}
 		
-		$new_content .= '</div>';
+		// $new_content .= '</div>';
 		
 		// Empty post_type means either malformed object found, or no valid parent was found.
 		if ( isset($redirect) && !$redirect && empty($post->post_type) ) {
@@ -1056,12 +1060,13 @@ class Wiki {
 		return '';
 	}
     
-    function get_edit_form() {
+    function get_edit_form($showheader = false) {
 		global $post, $wp_version, $edit_post, $post_id, $post_ID;
 		
-		echo '<div class="incsub_wiki incsub_wiki_single">';
-		echo '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
-			
+		if ($showheader) {
+			echo '<div class="incsub_wiki incsub_wiki_single">';
+			echo '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
+		}
 		echo '<h3>'.__('Edit', $this->translation_domain).'</h3>';
 		echo  '<form action="'.get_permalink().'" method="post">';
 		if (isset($_REQUEST['eaction']) && $_REQUEST['eaction'] == 'create') {
@@ -1101,8 +1106,9 @@ class Wiki {
 		echo  '<a href="'.get_permalink().'">'.__('Cancel', $this->translation_domain).'</a>';
 		echo  '</div>';
 		echo  '</form>';
-		echo  '</div>';
-		
+		if ($showheader) {
+			echo  '</div>';
+		}
 		if (version_compare($wp_version, "3.3") < 0) {
 			require_once 'lib/classes/WikiAdmin.php';
 			

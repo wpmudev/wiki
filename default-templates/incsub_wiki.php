@@ -26,7 +26,19 @@ get_header( 'wiki' );
             </div>
         </div>
     </div>
-    
-    <?php get_sidebar('wiki'); ?>
 </div>
+    
+<?php get_sidebar('wiki'); ?>
+
 <?php get_footer('wiki'); ?>
+
+<style type="text/css">
+.single #primary {
+	float: left;
+	margin: 0 -26.4% 0 0;
+}
+.singular #content, .left-sidebar.singular #content {
+	margin: 0 34% 0 7.6%;
+    width: 58.4%;
+}
+</style>
