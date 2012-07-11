@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.2.3';
+    var $current_version = '1.2.2.4';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -492,7 +492,6 @@ class Wiki {
 				}
 			}
 		}
-		// print_r($post_data); exit();
 		// Meta Stuff
 		if ( isset($post_data['meta']) && $post_data['meta'] ) {
 			foreach ( $post_data['meta'] as $key => $value ) {
@@ -584,7 +583,7 @@ class Wiki {
 		return $new_content;
     }
 
-    function decider($content, $action, $revision_id = null, $left = null, $right = null) {
+    function decider($content, $action, $revision_id = null, $left = null, $right = null, $stray_close = true) {
 		global $post;
 		
 		$new_content = '';
@@ -846,7 +845,9 @@ class Wiki {
 				$redirect = false;
 		}
 		
-		// $new_content .= '</div>';
+		if ($stray_close) {
+			$new_content .= '</div>';
+		}
 		
 		// Empty post_type means either malformed object found, or no valid parent was found.
 		if ( isset($redirect) && !$redirect && empty($post->post_type) ) {

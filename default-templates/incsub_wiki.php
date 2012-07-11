@@ -20,7 +20,7 @@ get_header( 'wiki' );
                 if ($action == 'discussion') {
                    comments_template( '', true );
                 } else {
-                    echo $wiki->decider(apply_filters('the_content', $post->post_content), $action, $revision_id, $left, $right);
+                    echo $wiki->decider(apply_filters('the_content', $post->post_content), $action, $revision_id, $left, $right, false);
                 }
                 ?>
             </div>
