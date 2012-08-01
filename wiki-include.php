@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.2.4';
+    var $current_version = '1.2.2.5';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -64,7 +64,7 @@ class Wiki {
 		add_action('add_meta_boxes_incsub_wiki', array(&$this, 'meta_boxes') );
 		add_action('wp_insert_post', array(&$this, 'save_wiki_meta'), 10, 2 );
 		
-    	add_action('admin_menu', array(&$this, 'admin_menu'));
+	    add_action('admin_menu', array(&$this, 'admin_menu'));
 		
 		add_action('widgets_init', array(&$this, 'widgets_init'));
 		add_action('pre_post_update', array(&$this, 'send_notifications'), 50, 1);
@@ -327,6 +327,7 @@ class Wiki {
 	
 		if ( $update )
 			$post_data['ID'] = (int) $post_data['post_ID'];
+			
 		$post_data['post_content'] = isset($post_data['content']) ? $post_data['content'] : '';
 		$post_data['post_excerpt'] = isset($post_data['excerpt']) ? $post_data['excerpt'] : '';
 		$post_data['post_parent'] = isset($post_data['parent_id'])? $post_data['parent_id'] : '';
@@ -1370,25 +1371,27 @@ class Wiki {
 							$current_privileges = unserialize($meta["incsub_wiki_privileges"][0]);
 							
 							if (!$current_privileges) {
-							$current_privileges = array();
+								$current_privileges = array('edit_posts');
 							}
 							if ($edit_post->post_status == 'auto-draft') {
-							$capable = true;
+								$capable = true;
 							} else if ($current_user->ID == 0) {
-							if (in_array('anyone', $current_privileges)) {
-								$capable = true;
-							}
+								if (in_array('anyone', $current_privileges)) {
+									$capable = true;
+								}
 							} else {
-							if (in_array('edit_posts', $current_privileges) && current_user_can('edit_posts')) {
-								$capable = true;
-							} else if (in_array('site', $current_privileges) && current_user_can_for_blog($blog_id, 'read')) {
-								$capable = true;
-							} else if (in_array('network', $current_privileges) && is_user_logged_in()) {
-								$capable = true;
-							} else if (in_array('anyone', $current_privileges)) {
-								$capable = true;
+								if (in_array('edit_posts', $current_privileges) && current_user_can('edit_posts')) {
+									$capable = true;
+								} else if (in_array('site', $current_privileges) && current_user_can_for_blog($blog_id, 'read')) {
+									$capable = true;
+								} else if (in_array('network', $current_privileges) && is_user_logged_in()) {
+									$capable = true;
+								} else if (in_array('anyone', $current_privileges)) {
+									$capable = true;
+								}
 							}
-							}
+						} else if (current_user_can('edit_posts')) {
+							$capable = true;
 						}
 						break;
 					default:
