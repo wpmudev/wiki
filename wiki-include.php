@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.2.5';
+    var $current_version = '1.2.2.6';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -91,6 +91,8 @@ class Wiki {
 		
 		add_action('pre_get_posts', array( &$this, 'pre_get_posts' ) );
 		
+		add_filter('request', array( &$this, 'request') );
+		
 		// White list the options to make sure non super admin can save wiki options 
 		// add_filter('whitelist_options', array(&$this, 'whitelist_options'));
 		
@@ -115,6 +117,18 @@ class Wiki {
 			$this->_options['default']['sub_wiki_name'] = __('Sub Wikis', $this->translation_domain);
 		}
     }
+	
+	function request( $query_vars ) {
+		
+		if ('incsub_wiki' == $query_vars['post_type'] && $query_vars['orderby'] == 'menu_order title' && $query_vars['posts_per_page'] == '-1') {
+			$query_vars['orderby'] = 'menu_order';
+			unset($query_vars['posts_per_page']);
+			unset($query_vars['posts_per_archive_page']);
+			return $query_vars;
+		}
+		
+		return $query_vars;
+	}
 	
 	function the_title( $title, $id = false ) {
 		global $wp_query, $post;
@@ -215,9 +229,10 @@ class Wiki {
 		
 		$new_rules = array();
 		
-		$new_rules[$this->_options['default']['slug'].'/'.WIKI_SLUG_CATEGORIES.'/(.?.+?)/?$'] = 'index.php?incsub_wiki_category=$matches[1]';
+		/*$new_rules[$this->_options['default']['slug'].'/'.WIKI_SLUG_CATEGORIES.'/(.?.+?)/?$'] = 'index.php?incsub_wiki_category=$matches[1]';
 		$new_rules[$this->_options['default']['slug'].'/'.WIKI_SLUG_TAGS.'/(.?.+?)/?$'] = 'index.php?incsub_wiki_tag=$matches[1]';
 		$new_rules[$this->_options['default']['slug'].'/(.?.+?)/?$'] = 'index.php?incsub_wiki=$matches[1]';
+		*/
 		
 		return array_merge($new_rules, $rules);
     }
@@ -231,9 +246,10 @@ class Wiki {
 			$value = array();
 		
 		$array_keys = array();
-		$array_keys[] = $this->_options['default']['slug'].'/(.?.+?)/?$';
+		/*$array_keys[] = $this->_options['default']['slug'].'/(.?.+?)/?$';
 		$array_keys[] = $this->_options['default']['slug'].'/'.WIKI_SLUG_TAGS.'/(.?.+?)/?$';
 		$array_keys[] = $this->_options['default']['slug'].'/'.WIKI_SLUG_CATEGORIES.'/(.?.+?)/?$';
+		*/
 		
 		foreach ($array_keys as $array_key) {
 			if ( !array_key_exists($array_key, $value) ) {
