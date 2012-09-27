@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.2.6';
+    var $current_version = '1.2.2.7';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -1975,9 +1975,17 @@ class Wiki {
 		include_once 'lib/classes/NewWikisWidget.php';
 		include_once 'lib/classes/PopularWikisWidget.php';
 		
+		include_once 'lib/classes/WikiCategoriesWidget.php';
+		include_once 'lib/classes/WikiTagsWidget.php';
+		include_once 'lib/classes/WikiTagCloudWidget.php';
+		
 		register_widget('WikiWidget');
 		register_widget('NewWikisWidget');
 		register_widget('PopularWikisWidget');
+		
+		register_widget('WikiCategoriesWidget');
+		register_widget('WikiTagsWidget');
+		register_widget('WikiTagCloudWidget');
     }
     
     function send_notifications($post_id) {

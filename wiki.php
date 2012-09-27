@@ -5,7 +5,7 @@
  Description: Add a wiki to your blog
  Author: S H Mohanjith (Incsub)
  WDP ID: 168
- Version: 1.2.2.6
+ Version: 1.2.2.7
  Author URI: http://premium.wpmudev.org
  Text Domain: incsub_wiki
 */
