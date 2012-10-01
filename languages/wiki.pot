@@ -1,0 +1,468 @@
+# Copyright (C) 2012 Wiki
+# This file is distributed under the same license as the Wiki package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Wiki 1.2.2.7\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/wiki\n"
+"POT-Creation-Date: 2012-10-01 09:20:45+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2012-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: default-templates/404-incsub_wiki.php:12
+msgid ""
+"Wiki page you are looking for does not exist. Feel free to create it "
+"yourself."
+msgstr ""
+
+#: lib/classes/NewWikisWidget.php:11
+msgid "Display New Wiki Pages"
+msgstr ""
+
+#: lib/classes/NewWikisWidget.php:12 lib/classes/NewWikisWidget.php:14
+#: lib/classes/NewWikisWidget.php:24 lib/classes/NewWikisWidget.php:83
+#: lib/classes/NewWikisWidget.php:91
+msgid "New Wikis"
+msgstr ""
+
+#: lib/classes/NewWikisWidget.php:96 lib/classes/PopularWikisWidget.php:97
+#: lib/classes/WikiCategoriesWidget.php:50
+#: lib/classes/WikiTagCloudWidget.php:50 lib/classes/WikiTagsWidget.php:50
+#: lib/classes/WikiWidget.php:96
+msgid "Title"
+msgstr ""
+
+#: lib/classes/NewWikisWidget.php:99 lib/classes/PopularWikisWidget.php:100
+#: lib/classes/WikiWidget.php:99
+msgid "Only top level"
+msgstr ""
+
+#: lib/classes/NewWikisWidget.php:101 lib/classes/PopularWikisWidget.php:102
+#: lib/classes/WikiWidget.php:101
+msgid "Yes"
+msgstr ""
+
+#: lib/classes/NewWikisWidget.php:102 lib/classes/PopularWikisWidget.php:103
+#: lib/classes/WikiWidget.php:102
+msgid "No"
+msgstr ""
+
+#: lib/classes/PopularWikisWidget.php:11
+msgid "Display Popular Wiki Pages"
+msgstr ""
+
+#: lib/classes/PopularWikisWidget.php:12 lib/classes/PopularWikisWidget.php:14
+#: lib/classes/PopularWikisWidget.php:24 lib/classes/PopularWikisWidget.php:84
+#: lib/classes/PopularWikisWidget.php:92
+msgid "Popular Wikis"
+msgstr ""
+
+#: lib/classes/WikiCategoriesWidget.php:11
+msgid "Display Wiki Categories"
+msgstr ""
+
+#: lib/classes/WikiCategoriesWidget.php:12
+#: lib/classes/WikiCategoriesWidget.php:14
+#: lib/classes/WikiCategoriesWidget.php:24
+#: lib/classes/WikiCategoriesWidget.php:38
+#: lib/classes/WikiCategoriesWidget.php:45 wiki-include.php:1635
+msgid "Wiki Categories"
+msgstr ""
+
+#: lib/classes/WikiTagCloudWidget.php:11
+msgid "Display Wiki Tag Cloud"
+msgstr ""
+
+#: lib/classes/WikiTagCloudWidget.php:12 lib/classes/WikiTagCloudWidget.php:14
+#: lib/classes/WikiTagCloudWidget.php:24 lib/classes/WikiTagCloudWidget.php:38
+#: lib/classes/WikiTagCloudWidget.php:45
+msgid "Wiki Tag Cloud"
+msgstr ""
+
+#: lib/classes/WikiTagsWidget.php:11
+msgid "Display Wiki Tags"
+msgstr ""
+
+#: lib/classes/WikiTagsWidget.php:12 lib/classes/WikiTagsWidget.php:14
+#: lib/classes/WikiTagsWidget.php:24 lib/classes/WikiTagsWidget.php:38
+#: lib/classes/WikiTagsWidget.php:45 wiki-include.php:1658
+msgid "Wiki Tags"
+msgstr ""
+
+#: lib/classes/WikiWidget.php:11
+msgid "Display Wiki Pages"
+msgstr ""
+
+#. #-#-#-#-#  wiki.pot (Wiki 1.2.2.7)  #-#-#-#-#
+#. Plugin Name of the plugin/theme
+#: lib/classes/WikiWidget.php:12 lib/classes/WikiWidget.php:14
+#: lib/classes/WikiWidget.php:24 lib/classes/WikiWidget.php:83
+#: lib/classes/WikiWidget.php:91 wiki-include.php:1610 wiki.php:27
+msgid "Wiki"
+msgstr ""
+
+#: lib/wpmudev-dashboard-notification/wpmudev-dash-notification.php:57
+msgid ""
+"Easily get updates, support, and one-click WPMU DEV plugin/theme "
+"installations right from in your dashboard - <strong><a href=\"%s\" title="
+"\"Install Now &raquo;\">install the free WPMU DEV Dashboard plugin</a></"
+"strong>. &nbsp;&nbsp;&nbsp;<small><a href=\"http://premium.wpmudev.org/wpmu-"
+"dev/update-notifications-plugin-information/\">(find out more)</a></small>"
+msgstr ""
+
+#: lib/wpmudev-dashboard-notification/wpmudev-dash-notification.php:61
+msgid ""
+"Updates, Support, Premium Plugins, Community - <strong><a href=\"%s\" title="
+"\"Activate Now &raquo;\">activate the WPMU DEV Dashboard plugin now</a></"
+"strong>."
+msgstr ""
+
+#: wiki-include.php:105 wiki-include.php:114 wiki-include.php:1482
+#: wiki-include.php:1495 wiki-include.php:1609 wiki-include.php:1619
+msgid "Wikis"
+msgstr ""
+
+#: wiki-include.php:105 wiki-include.php:117 wiki-include.php:1482
+#: wiki-include.php:1498
+msgid "Sub Wikis"
+msgstr ""
+
+#: wiki-include.php:371
+msgid "You are not allowed to edit pages as this user."
+msgstr ""
+
+#: wiki-include.php:372
+msgid "You are not allowed to create pages as this user."
+msgstr ""
+
+#: wiki-include.php:376
+msgid "You are not allowed to edit posts as this user."
+msgstr ""
+
+#: wiki-include.php:377
+msgid "You are not allowed to post as this user."
+msgstr ""
+
+#: wiki-include.php:462
+msgid "You are not allowed to edit this page."
+msgstr ""
+
+#: wiki-include.php:464
+msgid "You are not allowed to edit this post."
+msgstr ""
+
+#: wiki-include.php:619
+msgid ""
+"You attempted to edit an item that doesn&#8217;t exist. Perhaps it was "
+"deleted?"
+msgstr ""
+
+#: wiki-include.php:622
+msgid "You are not allowed to edit this item."
+msgstr ""
+
+#: wiki-include.php:625
+msgid ""
+"You can&#8217;t edit this item because it is in the Trash. Please restore it "
+"and try again."
+msgstr ""
+
+#: wiki-include.php:628
+msgid "Unknown post type."
+msgstr ""
+
+#: wiki-include.php:718
+msgid "Compare Revisions of &#8220;%1$s&#8221;"
+msgstr ""
+
+#: wiki-include.php:719
+msgid "Revisions"
+msgstr ""
+
+#: wiki-include.php:734
+msgid "Revision for &#8220;%1$s&#8221; created on %2$s"
+msgstr ""
+
+#: wiki-include.php:745
+msgid "Older: %s"
+msgstr ""
+
+#: wiki-include.php:746
+msgid "Newer: %s"
+msgstr ""
+
+#: wiki-include.php:771
+msgid "These revisions are identical."
+msgstr ""
+
+#: wiki-include.php:798 wiki-include.php:801
+msgid "Category:"
+msgstr ""
+
+#: wiki-include.php:799 wiki-include.php:802 wiki-include.php:1896
+msgid "Tags:"
+msgstr ""
+
+#: wiki-include.php:841 wiki-include.php:852
+msgid "Notify me of changes"
+msgstr ""
+
+#: wiki-include.php:850
+msgid "E-mail"
+msgstr ""
+
+#: wiki-include.php:912
+msgid "Auto Draft"
+msgstr ""
+
+#: wiki-include.php:1019 wiki-include.php:1088 wiki-include.php:1208
+msgid "Edit"
+msgstr ""
+
+#: wiki-include.php:1060 wiki-include.php:1123
+msgid "Save"
+msgstr ""
+
+#: wiki-include.php:1061 wiki-include.php:1124
+msgid "Cancel"
+msgstr ""
+
+#: wiki-include.php:1197
+msgid "Page"
+msgstr ""
+
+#: wiki-include.php:1199
+msgid "Discussion"
+msgstr ""
+
+#: wiki-include.php:1201
+msgid "History"
+msgstr ""
+
+#: wiki-include.php:1210
+msgid "Advanced"
+msgstr ""
+
+#: wiki-include.php:1212
+msgid "Create new"
+msgstr ""
+
+#. translators: post revision: 1: when, 2: author name
+#: wiki-include.php:1278
+msgctxt "post revision"
+msgid "%1$s by %2$s"
+msgstr ""
+
+#: wiki-include.php:1306
+msgid "Restore"
+msgstr ""
+
+#: wiki-include.php:1336
+msgctxt "revisions column name"
+msgid "Old"
+msgstr ""
+
+#: wiki-include.php:1337
+msgctxt "revisions column name"
+msgid "New"
+msgstr ""
+
+#: wiki-include.php:1338
+msgctxt "revisions column name"
+msgid "Date Created"
+msgstr ""
+
+#: wiki-include.php:1339
+msgid "Author"
+msgstr ""
+
+#: wiki-include.php:1340
+msgid "Actions"
+msgstr ""
+
+#: wiki-include.php:1511 wiki-include.php:1548
+msgid "Wiki Settings"
+msgstr ""
+
+#: wiki-include.php:1526
+msgid "Nice Try..."
+msgstr ""
+
+#: wiki-include.php:1544
+msgid "Settings saved."
+msgstr ""
+
+#: wiki-include.php:1553
+msgid "Wiki Slug"
+msgstr ""
+
+#: wiki-include.php:1557
+msgid "Number of breadcrumbs to add to title"
+msgstr ""
+
+#: wiki-include.php:1561
+msgid "What do you want to call Wikis?"
+msgstr ""
+
+#: wiki-include.php:1565
+msgid "What do you want to call Sub Wikis?"
+msgstr ""
+
+#: wiki-include.php:1571
+msgid "Save Changes"
+msgstr ""
+
+#: wiki-include.php:1611
+msgid "Add Wiki"
+msgstr ""
+
+#: wiki-include.php:1612
+msgid "Add New Wiki"
+msgstr ""
+
+#: wiki-include.php:1613
+msgid "Edit Wiki"
+msgstr ""
+
+#: wiki-include.php:1614
+msgid "New Wiki"
+msgstr ""
+
+#: wiki-include.php:1615
+msgid "View Wiki"
+msgstr ""
+
+#: wiki-include.php:1616
+msgid "Search Wiki"
+msgstr ""
+
+#: wiki-include.php:1617
+msgid "No wiki found"
+msgstr ""
+
+#: wiki-include.php:1618
+msgid "No wikis found in Trash"
+msgstr ""
+
+#: wiki-include.php:1636
+msgid "Wiki Category"
+msgstr ""
+
+#: wiki-include.php:1637
+msgid "Search Wiki Categories"
+msgstr ""
+
+#: wiki-include.php:1638
+msgid "All Wiki Categories"
+msgstr ""
+
+#: wiki-include.php:1639
+msgid "Parent Wiki Category"
+msgstr ""
+
+#: wiki-include.php:1640
+msgid "Parent Wiki Category:"
+msgstr ""
+
+#: wiki-include.php:1641
+msgid "Edit Wiki Category"
+msgstr ""
+
+#: wiki-include.php:1642
+msgid "Update Wiki Category"
+msgstr ""
+
+#: wiki-include.php:1643
+msgid "Add New Wiki Category"
+msgstr ""
+
+#: wiki-include.php:1644
+msgid "New Wiki Category Name"
+msgstr ""
+
+#: wiki-include.php:1659
+msgid "Wiki Tag"
+msgstr ""
+
+#: wiki-include.php:1660
+msgid "Search Wiki Tags"
+msgstr ""
+
+#: wiki-include.php:1661
+msgid "Popular Wiki Tags"
+msgstr ""
+
+#: wiki-include.php:1662
+msgid "All Wiki Tags"
+msgstr ""
+
+#: wiki-include.php:1663
+msgid "Edit Wiki Tag"
+msgstr ""
+
+#: wiki-include.php:1664
+msgid "Update Wiki Tag"
+msgstr ""
+
+#: wiki-include.php:1665
+msgid "Add New Wiki Tag"
+msgstr ""
+
+#: wiki-include.php:1666
+msgid "New Wiki Tag Name"
+msgstr ""
+
+#: wiki-include.php:1667
+msgid "Separate wiki tags with commas"
+msgstr ""
+
+#: wiki-include.php:1668
+msgid "Add or remove wiki tags"
+msgstr ""
+
+#: wiki-include.php:1669
+msgid "Choose from the most used wiki tags"
+msgstr ""
+
+#: wiki-include.php:1772
+msgid "Wiki Privileges"
+msgstr ""
+
+#: wiki-include.php:1773
+msgid "Wiki E-mail Notifications"
+msgstr ""
+
+#: wiki-include.php:1856
+msgid "Allow editing by"
+msgstr ""
+
+#: wiki-include.php:1892
+msgid "Select category..."
+msgstr ""
+
+#: wiki-include.php:1921
+msgid "Enable e-mail notifications"
+msgstr ""
+
+#: wiki-include.php:2093
+msgid "Wiki Page Changes"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "http://premium.wpmudev.org/project/wiki"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "Add a wiki to your blog"
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "S H Mohanjith (Incsub)"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://premium.wpmudev.org"
+msgstr ""
