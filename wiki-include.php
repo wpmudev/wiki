@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.2.7';
+    var $current_version = '1.2.2.8';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -573,28 +573,32 @@ class Wiki {
     function theme($content) {
 		global $post;
 		
-		$revision_id = isset($_REQUEST['revision'])?absint($_REQUEST['revision']):0;
-		$left        = isset($_REQUEST['left'])?absint($_REQUEST['left']):0;
-		$right       = isset($_REQUEST['right'])?absint($_REQUEST['right']):0;
-		$action      = isset($_REQUEST['action'])?$_REQUEST['action']:'view';
-		
-		$new_content = '';
-		if ($action != 'edit') {
-			$new_content .= '<div class="incsub_wiki incsub_wiki_single">';
-			$new_content .= '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
+		if ( !post_password_required() ) {
+			$revision_id = isset($_REQUEST['revision'])?absint($_REQUEST['revision']):0;
+			$left        = isset($_REQUEST['left'])?absint($_REQUEST['left']):0;
+			$right       = isset($_REQUEST['right'])?absint($_REQUEST['right']):0;
+			$action      = isset($_REQUEST['action'])?$_REQUEST['action']:'view';
 			
-			$new_content .= $this->decider($content, $action, $revision_id, $left, $right);
-		}
-		
-		if ( !comments_open() ) {
-			$new_content .= '<style type="text/css">'.
-			'#comments { display: none; }'.
-				'.comments { display: none; }'.
-			'</style>';
+			$new_content = '';
+			if ($action != 'edit') {
+				$new_content .= '<div class="incsub_wiki incsub_wiki_single">';
+				$new_content .= '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
+				
+				$new_content .= $this->decider($content, $action, $revision_id, $left, $right);
+			}
+			
+			if ( !comments_open() ) {
+				$new_content .= '<style type="text/css">'.
+				'#comments { display: none; }'.
+					'.comments { display: none; }'.
+				'</style>';
+			} else {
+				$new_content .= '<style type="text/css">'.
+				'.hentry { margin-bottom: 5px; }'.
+				'</style>';
+			}
 		} else {
-			$new_content .= '<style type="text/css">'.
-			'.hentry { margin-bottom: 5px; }'.
-			'</style>';
+			$new_content = $content;
 		}
 		
 		return $new_content;

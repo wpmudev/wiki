@@ -7,7 +7,7 @@ get_header( 'wiki' );
         <div class="padder">
             <div id="wiki-page-wrapper">
                 <h1 class="entry-title"><?php the_title(); ?></h1>
-                
+                <?php if ( !post_password_required() ) { ?>
                 <div class="incsub_wiki incsub_wiki_single">
                     <div class="incsub_wiki_tabs incsub_wiki_tabs_top"><?php echo $wiki->tabs(); ?><div class="incsub_wiki_clear"></div></div>
                 </div>
@@ -23,6 +23,7 @@ get_header( 'wiki' );
                     echo $wiki->decider(apply_filters('the_content', $post->post_content), $action, $revision_id, $left, $right, false);
                 }
                 ?>
+		<?php } ?>
             </div>
         </div>
     </div>
