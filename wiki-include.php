@@ -1734,7 +1734,7 @@ class Wiki {
 		}
 		
 		if (isset($_POST['wiki_default']) && wp_verify_nonce($_POST['_wpnonce'], 'incsub_wiki-update-options')) {
-			$this->_options['default']['slug'] = $_POST['wiki_default']['slug'];
+			$this->_options['default']['slug'] = untrailingslashit($_POST['wiki_default']['slug']);
 			$this->_options['default']['breadcrumbs_in_title'] = intval($_POST['wiki_default']['breadcrumbs_in_title']);
 			$this->_options['default']['wiki_name'] = $_POST['wiki_default']['wiki_name'];
 			$this->_options['default']['sub_wiki_name'] = $_POST['wiki_default']['sub_wiki_name'];
