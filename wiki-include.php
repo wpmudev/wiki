@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.2.8';
+    var $current_version = '1.2.2.9';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -719,7 +719,7 @@ class Wiki {
 				}
 				
 				$post_title = '<a href="' . get_permalink().'?action=edit' . '">' . get_the_title() . '</a>';
-				$h2 = sprintf( __( 'Compare Revisions of &#8220;%1$s&#8221;' ), $post_title );
+				$h2 = sprintf( __( 'Compare Revisions of &#8220;%1$s&#8221;', $this->translation_domain ), $post_title );
 				$title = __( 'Revisions' );
 				
 				$left  = $left_revision->ID;
@@ -735,7 +735,7 @@ class Wiki {
 					$revisions = wp_get_post_revisions( $post->ID );
 					$revision = array_shift($revisions);
 					$revision_title = wp_post_revision_title( $revision, false );
-					$h2 = sprintf( __( 'Revision for &#8220;%1$s&#8221; created on %2$s' ), $post_title, $revision_title );
+					$h2 = sprintf( __( 'Revision for &#8220;%1$s&#8221; created on %2$s', $this->translation_domain ), $post_title, $revision_title );
 				}
 				
 				$new_content .= '<h3 class="long-header">'.$h2.'</h3>';
