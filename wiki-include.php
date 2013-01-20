@@ -52,7 +52,7 @@ class Wiki {
 		register_activation_hook(__FILE__, array(&$this, 'install'));
 		register_deactivation_hook(__FILE__, array(&$this, 'uninstall'));
 		
-        // Actions
+	    // Actions
 		add_action('init', array(&$this, 'init'), 0);
 		add_action('init', array(&$this, 'post_action'));
 		add_action('wp_head', array(&$this, 'output_css'));
@@ -1976,17 +1976,17 @@ class Wiki {
     
     function widgets_init() {
 		include_once 'lib/classes/WikiWidget.php';
+		include_once 'lib/classes/SearchWikisWidget.php';
 		include_once 'lib/classes/NewWikisWidget.php';
 		include_once 'lib/classes/PopularWikisWidget.php';
-		
 		include_once 'lib/classes/WikiCategoriesWidget.php';
 		include_once 'lib/classes/WikiTagsWidget.php';
 		include_once 'lib/classes/WikiTagCloudWidget.php';
 		
 		register_widget('WikiWidget');
+		register_widget('SearchWikisWidget');
 		register_widget('NewWikisWidget');
 		register_widget('PopularWikisWidget');
-		
 		register_widget('WikiCategoriesWidget');
 		register_widget('WikiTagsWidget');
 		register_widget('WikiTagCloudWidget');
