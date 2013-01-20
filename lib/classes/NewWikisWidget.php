@@ -32,7 +32,7 @@ class NewWikisWidget extends WP_Widget {
 			    array(
 				'post_parent' => 0,
 				'post_type' => 'incsub_wiki',
-				'order_by' => 'post_date',
+				'orderby' => 'post_date',
 				'order' => 'DESC',
 				'numberposts' => 100000
 			    ));

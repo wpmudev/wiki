@@ -102,7 +102,8 @@ class Wiki {
 			$this->db_prefix = $wpdb->prefix;
 		}
 		
-		$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki', 'breadcrumbs_in_title' => 0, 'wiki_name' => __('Wikis', $this->translation_domain), 'sub_wiki_name' => __('Sub Wikis', $this->translation_domain)));
+		$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki', 'breadcrumbs_in_title' => 0, 'wiki_name' => __('Wikis', $this->translation_domain), 'sub_wiki_name' => __('Sub Wikis', $this->translation_domain),
+									      'sub_wiki_order_by' => 'menu_order', 'sub_wiki_order' => 'ASC'));
 		
 		if (!isset($this->_options['default']['slug'])) {
 			$this->_options['default']['slug'] = 'wiki';
@@ -116,11 +117,17 @@ class Wiki {
 		if (!isset($this->_options['default']['sub_wiki_name'])) {
 			$this->_options['default']['sub_wiki_name'] = __('Sub Wikis', $this->translation_domain);
 		}
+		if (!isset($this->_options['default']['sub_wiki_order_by'])) {
+			$this->_options['default']['sub_wiki_order_by'] = 'menu_order';
+		}
+		if (!isset($this->_options['default']['sub_wiki_order'])) {
+			$this->_options['default']['sub_wiki_order'] = 'ASC';
+		}
     }
 	
 	function request( $query_vars ) {
 		
-		if ('incsub_wiki' == $query_vars['post_type'] && $query_vars['orderby'] == 'menu_order title' && $query_vars['posts_per_page'] == '-1') {
+		if ('incsub_wiki' == $query_vars['post_type'] && (isset($query_vars['orderby']) && $query_vars['orderby'] == 'menu_order title') && $query_vars['posts_per_page'] == '-1') {
 			$query_vars['orderby'] = 'menu_order';
 			unset($query_vars['posts_per_page']);
 			unset($query_vars['posts_per_archive_page']);
@@ -808,8 +815,8 @@ class Wiki {
 				$children = get_posts(
 						array('post_parent' => $post->ID,
 							  'post_type' => 'incsub_wiki',
-							  'orderby' => 'menu_order',
-							  'order' => 'ASC',
+							  'orderby' => $this->_options['default']['sub_wiki_order_by'],
+							  'order' => $this->_options['default']['sub_wiki_order'],
 							  'numberposts' => 100000));
 				
 				$crumbs = array();
@@ -1483,10 +1490,11 @@ class Wiki {
 		dbDelta($sql_main);
 		
 		// Default chat options
-		$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki', 'breadcrumbs_in_title' => 0, 'wiki_name' => __('Wikis', $this->translation_domain), 'sub_wiki_name' => __('Sub Wikis', $this->translation_domain)));
+		$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki', 'breadcrumbs_in_title' => 0, 'wiki_name' => __('Wikis', $this->translation_domain), 'sub_wiki_name' => __('Sub Wikis', $this->translation_domain),
+									      'sub_wiki_order_by' => 'menu_order', 'sub_wiki_order' => 'ASC'));
 	
 		if (!is_array($this->_options['default'])) {
-			 $this->_options['default'] = array('slug' => 'wiki', 'breadcrumbs_in_title' => 0);
+			$this->_options['default'] = array('slug' => 'wiki', 'breadcrumbs_in_title' => 0);
 		}
 		
 		if (!isset($this->_options['default']['slug'])) {
@@ -1500,6 +1508,12 @@ class Wiki {
 		}
 		if (!isset($this->_options['default']['sub_wiki_name'])) {
 			$this->_options['default']['sub_wiki_name'] = __('Sub Wikis', $this->translation_domain);
+		}
+		if (!isset($this->_options['default']['sub_wiki_order_by'])) {
+			$this->_options['default']['sub_wiki_order_by'] = 'menu_order';
+		}
+		if (!isset($this->_options['default']['sub_wiki_order'])) {
+			$this->_options['default']['sub_wiki_order'] = 'ASC';
 		}
 		
 		update_option('wiki_version', $this->current_version);
@@ -1535,6 +1549,8 @@ class Wiki {
 			$this->_options['default']['breadcrumbs_in_title'] = intval($_POST['wiki_default']['breadcrumbs_in_title']);
 			$this->_options['default']['wiki_name'] = $_POST['wiki_default']['wiki_name'];
 			$this->_options['default']['sub_wiki_name'] = $_POST['wiki_default']['sub_wiki_name'];
+			$this->_options['default']['sub_wiki_order_by'] = $_POST['wiki_default']['sub_wiki_order_by'];
+			$this->_options['default']['sub_wiki_order'] = $_POST['wiki_default']['sub_wiki_order'];
 			update_option('wiki_default', $this->_options['default']);
 			?>
 			<script type="text/javascript">
@@ -1568,6 +1584,21 @@ class Wiki {
 				<tr valign="top">
 					<td><label for="incsub_wiki-sub_wiki_name"><?php _e('What do you want to call Sub Wikis?', $this->translation_domain); ?></label> </td>
 					<td><input type="text" size="20" id="incsub_wiki-sub_wiki_name" name="wiki_default[sub_wiki_name]" value="<?php print $this->_options['default']['sub_wiki_name']; ?>" /></td>
+				</tr>
+				<tr valign="top">
+					<td><label for="incsub_wiki-sub_wiki_order_by"><?php _e('How should Sub Wikis be ordered?', $this->translation_domain); ?></label> </td>
+					<td><select id="incsub_wiki-sub_wiki_order_by" name="wiki_default[sub_wiki_order_by]" >
+						<option value="menu_order" <?php if ($this->_options['default']['sub_wiki_order_by'] == 'menu_order'){ echo 'selected="selected"'; } ?> ><?php _e('Menu Order/Order Created', $this->translation_domain); ?></option>
+						<option value="title" <?php if ($this->_options['default']['sub_wiki_order_by'] == 'title'){ echo 'selected="selected"'; } ?> ><?php _e('Title', $this->translation_domain); ?></option>
+						<option value="rand" <?php if ($this->_options['default']['sub_wiki_order_by'] == 'rand'){ echo 'selected="selected"'; } ?> ><?php _e('Random', $this->translation_domain); ?></option>
+					    </select></td>
+				</tr>
+				<tr valign="top">
+					<td><label for="incsub_wiki-sub_wiki_order"><?php _e('What order should Sub Wikis be ordered?', $this->translation_domain); ?></label> </td>
+					<td><select id="incsub_wiki-sub_wiki_order" name="wiki_default[sub_wiki_order]" >
+						<option value="ASC" <?php if ($this->_options['default']['sub_wiki_order'] == 'ASC'){ echo 'selected="selected"'; } ?> ><?php _e('Ascending', $this->translation_domain); ?></option>
+						<option value="DESC" <?php if ($this->_options['default']['sub_wiki_order'] == 'DESC'){ echo 'selected="selected"'; } ?> ><?php _e('Descending', $this->translation_domain); ?></option>
+					    </select></td>
 				</tr>
 			</table>
 			
@@ -1738,6 +1769,8 @@ class Wiki {
 			$this->_options['default']['breadcrumbs_in_title'] = intval($_POST['wiki_default']['breadcrumbs_in_title']);
 			$this->_options['default']['wiki_name'] = $_POST['wiki_default']['wiki_name'];
 			$this->_options['default']['sub_wiki_name'] = $_POST['wiki_default']['sub_wiki_name'];
+			$this->_options['default']['sub_wiki_order_by'] = $_POST['wiki_default']['sub_wiki_order_by'];
+			$this->_options['default']['sub_wiki_order'] = $_POST['wiki_default']['sub_wiki_order'];
 			update_option('wiki_default', $this->_options['default']);
 			wp_redirect('edit.php?post_type=incsub_wiki&page=incsub_wiki&incsub_wiki_settings_saved=1');
 			exit();

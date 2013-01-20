@@ -32,7 +32,7 @@ class PopularWikisWidget extends WP_Widget {
 			    array(
 				'post_parent' => 0,
 				'post_type' => 'incsub_wiki',
-				'order_by' => 'comment_count',
+				'orderby' => 'comment_count',
 				'order' => 'DESC',
 				'numberposts' => 100000
 			    )

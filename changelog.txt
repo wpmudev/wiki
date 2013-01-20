@@ -9,6 +9,7 @@ Change Log:
 ----------------------------------------------------------------------
 - Fixed: Some .po Lines dont work
 - Fixed: Trailing slash in slug breaks wiki
+- Order sub wikis and Wiki Widget
 
 1.2.2.8 - 11/16/2012
 ----------------------------------------------------------------------
