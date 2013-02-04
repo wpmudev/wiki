@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.2.9';
+    var $current_version = '1.2.3.0';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -1092,6 +1092,13 @@ class Wiki {
     function get_edit_form($showheader = false) {
 		global $post, $wp_version, $edit_post, $post_id, $post_ID;
 		
+		$stack = debug_backtrace();
+		
+		// Jet pack compatibility
+		if (isset($stack[3]) && isset($stack[3]['class']) 
+			&& isset($stack[3]['function']) && $stack[3]['class'] == 'Jetpack_PostImages' 
+			&& $stack[3]['function'] == 'from_html') return $showheader;
+		
 		if ($showheader) {
 			echo '<div class="incsub_wiki incsub_wiki_single">';
 			echo '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
@@ -2054,7 +2061,11 @@ class Wiki {
 		$revisions = wp_get_post_revisions($post->ID);
 		$revision = array_shift($revisions);
 		
-		$revert_url = wp_nonce_url(add_query_arg(array('revision' => $revision->ID), admin_url('revision.php')), "restore-post_$post->ID|$revision->ID" );
+		if ($revision) {
+			$revert_url = wp_nonce_url(add_query_arg(array('revision' => $revision->ID), admin_url('revision.php')), "restore-post_$post->ID|$revision->ID" );
+		} else {
+			$revert_url = "";
+		}
 		
 		//cleanup title
 		$blog_name = get_option('blogname');
@@ -2080,8 +2091,8 @@ Thanks,
 BLOGNAME
 
 Cancel subscription: CANCEL_URL";
-
-	$wiki_notification_content['author'] = "Dear Author,
+	    if ($revision) {
+			$wiki_notification_content['author'] = "Dear Author,
 
 POST_TITLE was changed
 
@@ -2094,6 +2105,20 @@ Thanks,
 BLOGNAME
 
 Cancel subscription: CANCEL_URL";
+	    } else {
+			$wiki_notification_content['author'] = "Dear Author,
+
+POST_TITLE was changed
+
+You can read the Wiki page in full here: POST_URL
+
+EXCERPT
+
+Thanks,
+BLOGNAME
+
+Cancel subscription: CANCEL_URL";	
+	    }
 
 		//format notification text
 		foreach ($wiki_notification_content as $key => $content) {
