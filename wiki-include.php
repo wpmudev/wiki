@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.3.0';
+    var $current_version = '1.2.3.1';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -127,7 +127,7 @@ class Wiki {
 	
 	function request( $query_vars ) {
 		
-		if ('incsub_wiki' == $query_vars['post_type'] && (isset($query_vars['orderby']) && $query_vars['orderby'] == 'menu_order title') && $query_vars['posts_per_page'] == '-1') {
+		if (!is_admin() && 'incsub_wiki' == $query_vars['post_type'] && (isset($query_vars['orderby']) && $query_vars['orderby'] == 'menu_order title') && $query_vars['posts_per_page'] == '-1') {
 			$query_vars['orderby'] = 'menu_order';
 			unset($query_vars['posts_per_page']);
 			unset($query_vars['posts_per_archive_page']);
