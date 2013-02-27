@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.3.1';
+    var $current_version = '1.2.3.2';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -127,7 +127,7 @@ class Wiki {
 	
 	function request( $query_vars ) {
 		
-		if (!is_admin() && 'incsub_wiki' == $query_vars['post_type'] && (isset($query_vars['orderby']) && $query_vars['orderby'] == 'menu_order title') && $query_vars['posts_per_page'] == '-1') {
+		if (!is_admin() && isset($query_vars['post_type']) && 'incsub_wiki' == $query_vars['post_type'] && (isset($query_vars['orderby']) && $query_vars['orderby'] == 'menu_order title') && $query_vars['posts_per_page'] == '-1') {
 			$query_vars['orderby'] = 'menu_order';
 			unset($query_vars['posts_per_page']);
 			unset($query_vars['posts_per_archive_page']);
@@ -837,7 +837,7 @@ class Wiki {
 				
 				$revisions = wp_get_post_revisions($post->ID);
 				
-				if (current_user_can('edit_wiki')) {
+				if (current_user_can('edit_wiki', $post->ID)) {
 					$bottom .= '<div class="incsub_wiki-meta">';
 					if (is_array($revisions) && count($revisions) > 0) {
 					$revision = array_shift($revisions);
