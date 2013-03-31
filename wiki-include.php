@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.3.2';
+    var $current_version = '1.2.3.3';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -1341,7 +1341,7 @@ class Wiki {
 			$content .= '<form action="'.get_permalink().'" method="get">';
 			$content .= '<div class="tablenav">';
 			$content .= '<div class="alignleft">';
-			$content .= '<input type="submit" class="button-secondary" value="'.esc_attr( 'Compare Revisions' ).'" />';
+			$content .= '<input type="submit" class="button-secondary" value="'.esc_attr( __('Compare Revisions', $this->translation_domain ) ).'" />';
 			$content .= '<input type="hidden" name="action" value="diff" />';
 			$content .= '<input type="hidden" name="post_type" value="'.esc_attr($post->post_type).'" />';
 			$content .= '</div>';
@@ -1893,13 +1893,18 @@ class Wiki {
 		if (!is_array($current_privileges)) {
 			$current_privileges = array('edit_posts');
 		}
-		$privileges = array('anyone' => 'Anyone', 'network' => 'Network users', 'site' => 'Site users', 'edit_posts' => 'Users who can edit posts in this site');
+		$privileges = array(
+			'anyone' => __('Anyone', $this->translation_domain),
+			'network' => __('Network users', $this->translation_domain),
+			'site' => __('Site users', $this->translation_domain),
+			'edit_posts' => __('Users who can edit posts in this site', $this->translation_domain)
+			);
 		
 		$content .= '<input type="hidden" name="incsub_wiki_privileges_meta" value="1" />';
 		$content .= '<div class="alignleft">';
 		$content .= '<b>'. __('Allow editing by', $this->translation_domain).'</b><br/>';
 		foreach ($privileges as $key => $privilege) {
-			$content .= '<label class="incsub_wiki_label_roles"><input type="checkbox" name="incsub_wiki_privileges[]" value="'.$key.'" '.((in_array($key, $current_privileges))?'checked="checked"':'').' /> '.__($privilege, $this->translation_domain).'</label><br class="incsub_wiki_br_roles"/>';
+			$content .= '<label class="incsub_wiki_label_roles"><input type="checkbox" name="incsub_wiki_privileges[]" value="'.$key.'" '.((in_array($key, $current_privileges))?'checked="checked"':'').' /> '.$privilege.'</label><br class="incsub_wiki_br_roles"/>';
 		}
 		$content .= '</div>';
 		$content .= '<div class="clear"></div>';
