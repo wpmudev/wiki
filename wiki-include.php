@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.3.3';
+    var $current_version = '1.2.3.4';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -1727,21 +1727,6 @@ class Wiki {
 				'rewrite' => array( 'slug' => $this->_options['default']['slug'], 'with_front' => false ),
 			)
 		);
-		
-		$wiki_cat_structure = '/'.$this->_options['default']['slug']. '/' . WIKI_SLUG_CATEGORIES . '/%incsub_wiki_category%';
-		
-		$wp_rewrite->add_rewrite_tag("%incsub_wiki_category%", '(.?.+?)', "incsub_wiki_category=");
-		$wp_rewrite->add_permastruct('incsub_wiki_category', $wiki_cat_structure, false);
-		
-		$wiki_tag_structure = '/'.$this->_options['default']['slug'] . '/' . WIKI_SLUG_TAGS . '/%incsub_wiki_tag%';
-		
-		$wp_rewrite->add_rewrite_tag("%incsub_wiki_tag%", '(.?.+?)', "incsub_wiki_tag=");
-		$wp_rewrite->add_permastruct('incsub_wiki_tag', $wiki_tag_structure, false);
-		
-		$wiki_structure = '/'.$this->_options['default']['slug'].'/%incsub_wiki%';
-		
-		$wp_rewrite->add_rewrite_tag("%incsub_wiki%", '(.?.+?)', "incsub_wiki=");
-		$wp_rewrite->add_permastruct('incsub_wiki', $wiki_structure, false);
 		
 		if (isset($_REQUEST['subscribe']) && wp_verify_nonce($_REQUEST['_wpnonce'], "wiki-subscribe-wiki_{$_REQUEST['post_id']}")) {
 			if (isset($_REQUEST['email'])) {
