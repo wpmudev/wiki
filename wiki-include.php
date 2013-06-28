@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.3.4';
+    var $current_version = '1.2.3.5';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -55,8 +55,6 @@ class Wiki {
 	    // Actions
 		add_action('init', array(&$this, 'init'), 0);
 		add_action('init', array(&$this, 'post_action'));
-		add_action('wp_head', array(&$this, 'output_css'));
-		add_action('wp_head', array(&$this, 'output_js'), 0);
 		
 		add_action('admin_print_styles-settings_page_wiki', array(&$this, 'admin_styles'));
     	add_action('admin_print_scripts-settings_page_wiki', array(&$this, 'admin_scripts'));
@@ -93,6 +91,10 @@ class Wiki {
 		
 		add_filter('request', array( &$this, 'request') );
 		
+		add_filter('body_class', array( &$this, 'body_class'), 10);
+		
+		add_action('wp_enqueue_scripts', array( &$this, 'wp_enqueue_scripts'), 10);
+		
 		// White list the options to make sure non super admin can save wiki options 
 		// add_filter('whitelist_options', array(&$this, 'whitelist_options'));
 		
@@ -102,8 +104,16 @@ class Wiki {
 			$this->db_prefix = $wpdb->prefix;
 		}
 		
-		$this->_options['default'] = get_option('wiki_default', array('slug' => 'wiki', 'breadcrumbs_in_title' => 0, 'wiki_name' => __('Wikis', $this->translation_domain), 'sub_wiki_name' => __('Sub Wikis', $this->translation_domain),
-									      'sub_wiki_order_by' => 'menu_order', 'sub_wiki_order' => 'ASC'));
+		$this->_options['default'] = get_option('wiki_default',
+			array(
+					'slug' => 'wiki',
+					'breadcrumbs_in_title' => 0,
+					'wiki_name' => __('Wikis', $this->translation_domain),
+					'sub_wiki_name' => __('Sub Wikis', $this->translation_domain),
+					'sub_wiki_order_by' => 'menu_order',
+					'sub_wiki_order' => 'ASC'
+			)
+		);
 		
 		if (!isset($this->_options['default']['slug'])) {
 			$this->_options['default']['slug'] = 'wiki';
@@ -149,6 +159,20 @@ class Wiki {
 		}
 		
 		return $title;
+	}
+	
+	function body_class($classes) {
+		if (get_query_var('post_type') == 'incsub_wiki') {
+			if (!in_array('incsub_wiki', $classes)) {
+				$classes[] = 'incsub_wiki';
+			}
+			
+			if (is_singular() && !in_array('single-incsub_wiki', $classes)) {
+				$classes[] = 'single-incsub_wiki';
+			}
+		}
+		
+		return $classes;
 	}
 	
 	function not_found_template( $path ) {
@@ -1645,8 +1669,6 @@ class Wiki {
 		
 		$this->install();
 		
-		wp_register_script('incsub_wiki_js', plugins_url('wiki/js/wiki-utils.js'), null, $this->current_version);
-		
 		$labels = array(
 			'name' => __('Wikis', $this->translation_domain),
 			'singular_name' => __('Wiki', $this->translation_domain),
@@ -1769,16 +1791,19 @@ class Wiki {
 		}
     }
     
-    /**
-     * Output CSS
-     */
-    function output_css() {
-        echo '<link rel="stylesheet" href="' . plugins_url('wiki/css/style.css') . '" type="text/css" />';
-    }
-    
-    function output_js() {
-		wp_enqueue_script('utils');
-    }
+	function wp_enqueue_scripts() {
+		wp_register_script('incsub_wiki_js', plugins_url('wiki/js/wiki-utils.js'), null, $this->current_version);
+		
+		wp_register_style('incsub_wiki-css', plugins_url('wiki/css/style.css'), null, $this->current_version);
+		wp_register_style('incsub_wiki-print-css', plugins_url('wiki/css/print.css'), null, $this->current_version, 'print');
+		
+		if (get_query_var('post_type') == 'incsub_wiki') {
+			wp_enqueue_script('utils');
+			
+			wp_enqueue_style('incsub_wiki-css');
+			wp_enqueue_style('incsub_wiki-print-css');
+		}
+	}
     
     function is_subscribed() {
 		global $wpdb, $current_user, $post, $blog_id;

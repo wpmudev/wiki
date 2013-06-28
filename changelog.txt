@@ -5,6 +5,14 @@ Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
 
+1.2.3.5 - 06/28/2013
+----------------------------------------------------------------------
+- Added class to body of Wiki Pages
+- In Wiki widget limit how many levels are displayed
+- Print styles for wiki
+- Improved wiki styles
+- Enqueue styles instead of printing
+
 1.2.3.4 - 05/13/2013
 ----------------------------------------------------------------------
 - Wiki URLs made compatible with PATHINFO setups
