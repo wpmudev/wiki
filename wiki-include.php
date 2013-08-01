@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.3.5';
+    var $current_version = '1.2.3.6';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -1191,7 +1191,9 @@ class Wiki {
 		
 		$content .= '<div class="incsub_wiki_meta_box">'.$this->wiki_taxonomies(false).'</div>';
 		$content .= '<div class="incsub_wiki_meta_box">'.$this->notifications_meta_box(false).'</div>';
-		$content .= '<div class="incsub_wiki_meta_box">'.$this->privileges_meta_box(false).'</div>';
+		if (current_user_can('edit_wiki_privileges')) {
+			$content .= '<div class="incsub_wiki_meta_box">'.$this->privileges_meta_box(false).'</div>';
+		}
 		
 		return $content;
     }
@@ -1547,6 +1549,9 @@ class Wiki {
 			$this->_options['default']['sub_wiki_order'] = 'ASC';
 		}
 		
+		$role_obj = get_role('administrator');
+		$role_obj->add_cap('edit_wiki_privileges');
+		
 		update_option('wiki_version', $this->current_version);
 		update_option('wiki_default', $this->_options['default']);
     }
@@ -1574,22 +1579,6 @@ class Wiki {
 		if(!current_user_can('manage_options')) {
 			echo "<p>" . __('Nice Try...', $this->translation_domain) . "</p>";  //If accessed properly, this message doesn't appear.
 			return;
-		}
-		if (isset($_POST['_wpnonce']) && wp_verify_nonce($_POST['_wpnonce'], 'incsub_wiki-update-options')) {
-			$this->_options['default']['slug'] = $_POST['wiki_default']['slug'];
-			$this->_options['default']['breadcrumbs_in_title'] = intval($_POST['wiki_default']['breadcrumbs_in_title']);
-			$this->_options['default']['wiki_name'] = $_POST['wiki_default']['wiki_name'];
-			$this->_options['default']['sub_wiki_name'] = $_POST['wiki_default']['sub_wiki_name'];
-			$this->_options['default']['sub_wiki_order_by'] = $_POST['wiki_default']['sub_wiki_order_by'];
-			$this->_options['default']['sub_wiki_order'] = $_POST['wiki_default']['sub_wiki_order'];
-			update_option('wiki_default', $this->_options['default']);
-			?>
-			<script type="text/javascript">
-			window.location = '<?php echo admin_url('edit.php?post_type=incsub_wiki&page=incsub_wiki&incsub_wiki_settings_saved=1'); ?>'
-			</script>
-			<?php
-			exit();
-	
 		}
 		if (isset($_GET['incsub_wiki_settings_saved']) && $_GET['incsub_wiki_settings_saved'] == 1) {
 			  echo '<div class="updated fade"><p>'.__('Settings saved.', $this->translation_domain).'</p></div>';
@@ -1631,6 +1620,20 @@ class Wiki {
 						<option value="DESC" <?php if ($this->_options['default']['sub_wiki_order'] == 'DESC'){ echo 'selected="selected"'; } ?> ><?php _e('Descending', $this->translation_domain); ?></option>
 					    </select></td>
 				</tr>
+				<tr valign="top">
+					<td><label><?php _e('Who can edit wiki privileges?', $this->translation_domain); ?></label> </td>
+					<td>
+						<?php
+						$editable_roles = get_editable_roles();
+						foreach ($editable_roles as $role_key => $role) {
+							$role_obj = get_role($role_key);
+							?>
+							<label><input type="checkbox" name="edit_wiki_privileges[<?php echo $role_key; ?>]" value="<?php echo $role_key; ?>" <?php echo $role_obj->has_cap('edit_wiki_privileges')?'checked="checked"':''; ?> /> <?php echo $role['name']; ?></label><br/>
+							<?php
+						}
+						?>
+					</td>
+				</tr>
 			</table>
 			
 			<p class="submit">
@@ -1659,7 +1662,7 @@ class Wiki {
      * @see		http://adambrown.info/p/wp_hooks/hook/init
      */
     function init() {
-		global $wpdb, $wp_rewrite, $current_user, $blog_id;
+		global $wpdb, $wp_rewrite, $current_user, $blog_id, $wp_roles;
 		
 		if (preg_match('/mu\-plugin/', PLUGINDIR) > 0) {
 			load_muplugin_textdomain($this->translation_domain, dirname(plugin_basename(__FILE__)).'/languages');
@@ -1786,6 +1789,16 @@ class Wiki {
 			$this->_options['default']['sub_wiki_order_by'] = $_POST['wiki_default']['sub_wiki_order_by'];
 			$this->_options['default']['sub_wiki_order'] = $_POST['wiki_default']['sub_wiki_order'];
 			update_option('wiki_default', $this->_options['default']);
+			
+			foreach ($wp_roles->roles as $role_key => $role) {
+				$role_obj = get_role($role_key);
+				if (isset($_POST['edit_wiki_privileges']) && isset($_POST['edit_wiki_privileges'][$role_key])) {
+					$role_obj->add_cap('edit_wiki_privileges');
+				} else {
+					$role_obj->remove_cap('edit_wiki_privileges');
+				}
+			}
+			
 			wp_redirect('edit.php?post_type=incsub_wiki&page=incsub_wiki&incsub_wiki_settings_saved=1');
 			exit();
 		}
