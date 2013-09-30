@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.3.6';
+    var $current_version = '1.2.3.7';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -68,7 +68,7 @@ class Wiki {
 		add_action('pre_post_update', array(&$this, 'send_notifications'), 50, 1);
 		add_action('template_redirect', array(&$this, 'load_templates') );
 		
-		add_filter('post_type_link', array(&$this, 'post_type_link'), 10, 3);
+		// add_filter('post_type_link', array(&$this, 'post_type_link'), 10, 3);
 		add_filter('term_link', array(&$this, 'term_link'), 10, 3);
 		add_filter('name_save_pre', array(&$this, 'name_save'));
 		
@@ -678,23 +678,23 @@ class Wiki {
 				
 				break;
 			case 'restore':
-				if ( !$revision = wp_get_post_revision( $revision_id ) )
+				if ( ! $revision = wp_get_post_revision( $revision_id ) )
 					break;
-				if ( !current_user_can( 'edit_post', $revision->post_parent ) )
+				if ( ! current_user_can( 'edit_post', $revision->post_parent ) )
 					break;
-				if ( !$post = get_post( $revision->post_parent ) )
+				if ( ! $post = get_post( $revision->post_parent ) )
 					break;
-				
+
 				// Revisions disabled and we're not looking at an autosave
 				if ( ( ! WP_POST_REVISIONS || !post_type_supports($post->post_type, 'revisions') ) && !wp_is_post_autosave( $revision ) ) {
 					$redirect = get_permalink().'?action=edit';
 					break;
 				}
-				
+
 				check_admin_referer( "restore-post_$post->ID|$revision->ID" );
-				
+
 				wp_restore_post_revision( $revision->ID );
-				$redirect = add_query_arg( array( 'message' => 5, 'revision' => $revision->ID ), get_permalink().'?action=edit' );
+				$redirect = add_query_arg( array( 'message' => 5, 'revision' => $revision->ID ), get_permalink().'?action=edit'  );
 				break;
 			case 'diff':
 				if ( !$left_revision  = get_post( $left ) ) {
@@ -703,20 +703,19 @@ class Wiki {
 				if ( !$right_revision = get_post( $right ) ) {
 					break;
 				}
-				
+
 				// If we're comparing a revision to itself, redirect to the 'view' page for that revision or the edit page for that post
 				if ( $left_revision->ID == $right_revision->ID ) {
-					$redirect = get_edit_post_link( $left_revision->ID );
-					include( ABSPATH . 'wp-admin/js/revisions-js.php' );
+					$redirect = get_permalink().'?action=edit';
 					break;
 				}
-				
+
 				// Don't allow reverse diffs?
 				if ( strtotime($right_revision->post_modified_gmt) < strtotime($left_revision->post_modified_gmt) ) {
 					$redirect = add_query_arg( array( 'left' => $right, 'right' => $left ) );
 					break;
 				}
-				
+
 				if ( $left_revision->ID == $right_revision->post_parent ) // right is a revision of left
 					$post =& $left_revision;
 				elseif ( $left_revision->post_parent == $right_revision->ID ) // left is a revision of right
@@ -738,7 +737,7 @@ class Wiki {
 					break;
 					}
 				}
-				
+
 				if (
 					// They're the same
 					$left_revision->ID == $right_revision->ID
@@ -748,11 +747,11 @@ class Wiki {
 					) {
 					break;
 				}
-				
+
 				$post_title = '<a href="' . get_permalink().'?action=edit' . '">' . get_the_title() . '</a>';
 				$h2 = sprintf( __( 'Compare Revisions of &#8220;%1$s&#8221;', $this->translation_domain ), $post_title );
 				$title = __( 'Revisions' );
-				
+
 				$left  = $left_revision->ID;
 				$right = $right_revision->ID;
 			case 'history':
@@ -760,7 +759,7 @@ class Wiki {
 				if ( ! WP_POST_REVISIONS || !post_type_supports($post->post_type, 'revisions') ) {
 					$args['type'] = 'autosave';
 				}
-				
+
 				if (!isset($h2)) {
 					$post_title = '<a href="' . get_permalink().'?action=edit' . '">' . get_the_title() . '</a>';
 					$revisions = wp_get_post_revisions( $post->ID );
@@ -768,7 +767,7 @@ class Wiki {
 					$revision_title = wp_post_revision_title( $revision, false );
 					$h2 = sprintf( __( 'Revision for &#8220;%1$s&#8221; created on %2$s', $this->translation_domain ), $post_title, $revision_title );
 				}
-				
+
 				$new_content .= '<h3 class="long-header">'.$h2.'</h3>';
 				$new_content .= '<table class="form-table ie-fixed">';
 				$new_content .= '<col class="th" />';
@@ -782,7 +781,7 @@ class Wiki {
 					$new_content .= '</th>';
 					$new_content .= '</tr>';
 				endif;
-				
+
 				// use get_post_to_edit filters?
 				$identical = true;
 				foreach ( _wp_post_revision_fields() as $field => $field_title ) :
@@ -792,10 +791,10 @@ class Wiki {
 						if ( !$rcontent = wp_text_diff( $left_content, $right_content ) )
 							continue; // There is no difference between left and right
 						$identical = false;
-					} else {
+				} else {
 						add_filter( "_wp_post_revision_field_$field", 'htmlspecialchars' );
 						$rcontent = apply_filters( "_wp_post_revision_field_$field", $revision->$field, $field );
-					}
+				}
 					$new_content .= '<tr id="revision-field-<?php echo $field; ?>">';
 					$new_content .= '<th scope="row">'.esc_html( $field_title ).'</th>';
 					$new_content .= '<td><div class="pre">'.$rcontent.'</div></td>';
@@ -807,7 +806,7 @@ class Wiki {
 				endif;
 				
 				$new_content .= '</table>';
-		
+				
 				$new_content .= '<br class="clear" />';
 				$new_content .= '<div class="incsub_wiki_revisions">' . $this->list_post_revisions( $post, $args ) . '</div>';
 				$redirect = false;
