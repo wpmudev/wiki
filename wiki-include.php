@@ -814,7 +814,7 @@ class Wiki {
 			default:
 				$top = "";
 				
-				$crumbs = array('<a href="'.site_url($this->_options['default']['slug']).'" class="incsub_wiki_crumbs">'.$this->_options['default']['wiki_name'].'</a>');
+				$crumbs = array('<a href="'.home_url($this->_options['default']['slug']).'" class="incsub_wiki_crumbs">'.$this->_options['default']['wiki_name'].'</a>');
 				foreach($post->ancestors as $parent_pid) {
 					$parent_post = get_post($parent_pid);
 					
