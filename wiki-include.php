@@ -1587,25 +1587,25 @@ class Wiki {
 			<h2><?php _e('Wiki Settings', $this->translation_domain); ?></h2>
 			<form method="post" action="edit.php?post_type=incsub_wiki&amp;page=incsub_wiki">
 			<?php wp_nonce_field('incsub_wiki-update-options'); ?>
-			<table>
+			<table class="form-table">
 				<tr valign="top">
-					<td><label for="incsub_wiki-slug"><?php _e('Wiki Slug', $this->translation_domain); ?></label> </td>
+					<th><label for="incsub_wiki-slug"><?php _e('Wiki Slug', $this->translation_domain); ?></label> </th>
 					<td> /<input type="text" size="20" id="incsub_wiki-slug" name="wiki_default[slug]" value="<?php print $this->_options['default']['slug']; ?>" /></td>
 				</tr>
 				<tr valign="top">
-					<td><label for="incsub_wiki-breadcrumbs_in_title"><?php _e('Number of breadcrumbs to add to title', $this->translation_domain); ?></label> </td>
+					<th><label for="incsub_wiki-breadcrumbs_in_title"><?php _e('Number of breadcrumbs to add to title', $this->translation_domain); ?></label> </th>
 					<td><input type="text" size="2" id="incsub_wiki-breadcrumbs_in_title" name="wiki_default[breadcrumbs_in_title]" value="<?php print $this->_options['default']['breadcrumbs_in_title']; ?>" /></td>
 				</tr>
 				<tr valign="top">
-					<td><label for="incsub_wiki-wiki_name"><?php _e('What do you want to call Wikis?', $this->translation_domain); ?></label> </td>
+					<th><label for="incsub_wiki-wiki_name"><?php _e('What do you want to call Wikis?', $this->translation_domain); ?></label> </th>
 					<td><input type="text" size="20" id="incsub_wiki-wiki_name" name="wiki_default[wiki_name]" value="<?php print $this->_options['default']['wiki_name']; ?>" /></td>
 				</tr>
 				<tr valign="top">
-					<td><label for="incsub_wiki-sub_wiki_name"><?php _e('What do you want to call Sub Wikis?', $this->translation_domain); ?></label> </td>
+					<th><label for="incsub_wiki-sub_wiki_name"><?php _e('What do you want to call Sub Wikis?', $this->translation_domain); ?></label> </th>
 					<td><input type="text" size="20" id="incsub_wiki-sub_wiki_name" name="wiki_default[sub_wiki_name]" value="<?php print $this->_options['default']['sub_wiki_name']; ?>" /></td>
 				</tr>
 				<tr valign="top">
-					<td><label for="incsub_wiki-sub_wiki_order_by"><?php _e('How should Sub Wikis be ordered?', $this->translation_domain); ?></label> </td>
+					<th><label for="incsub_wiki-sub_wiki_order_by"><?php _e('How should Sub Wikis be ordered?', $this->translation_domain); ?></label> </th>
 					<td><select id="incsub_wiki-sub_wiki_order_by" name="wiki_default[sub_wiki_order_by]" >
 						<option value="menu_order" <?php if ($this->_options['default']['sub_wiki_order_by'] == 'menu_order'){ echo 'selected="selected"'; } ?> ><?php _e('Menu Order/Order Created', $this->translation_domain); ?></option>
 						<option value="title" <?php if ($this->_options['default']['sub_wiki_order_by'] == 'title'){ echo 'selected="selected"'; } ?> ><?php _e('Title', $this->translation_domain); ?></option>
@@ -1613,14 +1613,14 @@ class Wiki {
 					    </select></td>
 				</tr>
 				<tr valign="top">
-					<td><label for="incsub_wiki-sub_wiki_order"><?php _e('What order should Sub Wikis be ordered?', $this->translation_domain); ?></label> </td>
+					<th><label for="incsub_wiki-sub_wiki_order"><?php _e('What order should Sub Wikis be ordered?', $this->translation_domain); ?></label> </th>
 					<td><select id="incsub_wiki-sub_wiki_order" name="wiki_default[sub_wiki_order]" >
 						<option value="ASC" <?php if ($this->_options['default']['sub_wiki_order'] == 'ASC'){ echo 'selected="selected"'; } ?> ><?php _e('Ascending', $this->translation_domain); ?></option>
 						<option value="DESC" <?php if ($this->_options['default']['sub_wiki_order'] == 'DESC'){ echo 'selected="selected"'; } ?> ><?php _e('Descending', $this->translation_domain); ?></option>
 					    </select></td>
 				</tr>
 				<tr valign="top">
-					<td><label><?php _e('Who can edit wiki privileges?', $this->translation_domain); ?></label> </td>
+					<th><label><?php _e('Who can edit wiki privileges?', $this->translation_domain); ?></label> </th>
 					<td>
 						<?php
 						$editable_roles = get_editable_roles();
@@ -1636,7 +1636,7 @@ class Wiki {
 			</table>
 			
 			<p class="submit">
-			<input type="submit" name="submit_settings" value="<?php _e('Save Changes', $this->translation_domain) ?>" />
+			<input type="submit" class="button-primary" name="submit_settings" value="<?php _e('Save Changes', $this->translation_domain) ?>" />
 			</p>
 		</form>
 		<?php
@@ -1749,6 +1749,7 @@ class Wiki {
 				'supports' => $supports,
 				'has_archive' => true,
 				'rewrite' => array( 'slug' => $this->_options['default']['slug'], 'with_front' => false ),
+				'menu_icon' => plugins_url('wiki/images/icon.png')
 			)
 		);
 		
