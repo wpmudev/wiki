@@ -2,9 +2,9 @@
 # This file is distributed under the same license as the Wiki package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Wiki 1.2.3.2\n"
+"Project-Id-Version: Wiki 1.2.3.7\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/wiki\n"
-"POT-Creation-Date: 2013-03-31 09:50:41+00:00\n"
+"POT-Creation-Date: 2013-10-14 20:24:59+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -23,33 +23,28 @@ msgid "Display New Wiki Pages"
 msgstr ""
 
 #: lib/classes/NewWikisWidget.php:12 lib/classes/NewWikisWidget.php:14
-#: lib/classes/NewWikisWidget.php:24 lib/classes/NewWikisWidget.php:83
-#: lib/classes/NewWikisWidget.php:91
+#: lib/classes/NewWikisWidget.php:24 lib/classes/NewWikisWidget.php:89
+#: lib/classes/NewWikisWidget.php:97
 msgid "New Wikis"
 msgstr ""
 
-#: lib/classes/NewWikisWidget.php:96 lib/classes/PopularWikisWidget.php:97
+#: lib/classes/NewWikisWidget.php:107 lib/classes/PopularWikisWidget.php:108
 #: lib/classes/SearchWikisWidget.php:54
 #: lib/classes/WikiCategoriesWidget.php:50
 #: lib/classes/WikiTagCloudWidget.php:50 lib/classes/WikiTagsWidget.php:50
-#: lib/classes/WikiWidget.php:106 lib/classes/WikiWidget.php:118
-#: wiki-include.php:1599
+#: lib/classes/WikiWidget.php:119 lib/classes/WikiWidget.php:133
+#: wiki-include.php:1611
 msgid "Title"
 msgstr ""
 
-#: lib/classes/NewWikisWidget.php:99 lib/classes/PopularWikisWidget.php:100
-#: lib/classes/WikiWidget.php:109
-msgid "Only top level"
+#: lib/classes/NewWikisWidget.php:110 lib/classes/PopularWikisWidget.php:111
+#: lib/classes/WikiWidget.php:122
+msgid "Levels"
 msgstr ""
 
-#: lib/classes/NewWikisWidget.php:101 lib/classes/PopularWikisWidget.php:102
-#: lib/classes/WikiWidget.php:111
-msgid "Yes"
-msgstr ""
-
-#: lib/classes/NewWikisWidget.php:102 lib/classes/PopularWikisWidget.php:103
-#: lib/classes/WikiWidget.php:112
-msgid "No"
+#: lib/classes/NewWikisWidget.php:115 lib/classes/PopularWikisWidget.php:116
+#: lib/classes/WikiWidget.php:127
+msgid "Unlimited"
 msgstr ""
 
 #: lib/classes/PopularWikisWidget.php:11
@@ -57,8 +52,8 @@ msgid "Display Popular Wiki Pages"
 msgstr ""
 
 #: lib/classes/PopularWikisWidget.php:12 lib/classes/PopularWikisWidget.php:14
-#: lib/classes/PopularWikisWidget.php:24 lib/classes/PopularWikisWidget.php:84
-#: lib/classes/PopularWikisWidget.php:92
+#: lib/classes/PopularWikisWidget.php:24 lib/classes/PopularWikisWidget.php:90
+#: lib/classes/PopularWikisWidget.php:98
 msgid "Popular Wikis"
 msgstr ""
 
@@ -88,7 +83,7 @@ msgstr ""
 #: lib/classes/WikiCategoriesWidget.php:14
 #: lib/classes/WikiCategoriesWidget.php:24
 #: lib/classes/WikiCategoriesWidget.php:38
-#: lib/classes/WikiCategoriesWidget.php:45 wiki-include.php:1677
+#: lib/classes/WikiCategoriesWidget.php:45 wiki-include.php:1701
 msgid "Wiki Categories"
 msgstr ""
 
@@ -108,7 +103,7 @@ msgstr ""
 
 #: lib/classes/WikiTagsWidget.php:12 lib/classes/WikiTagsWidget.php:14
 #: lib/classes/WikiTagsWidget.php:24 lib/classes/WikiTagsWidget.php:38
-#: lib/classes/WikiTagsWidget.php:45 wiki-include.php:1700
+#: lib/classes/WikiTagsWidget.php:45 wiki-include.php:1724
 msgid "Wiki Tags"
 msgstr ""
 
@@ -116,35 +111,35 @@ msgstr ""
 msgid "Display Wiki Pages"
 msgstr ""
 
-#. #-#-#-#-#  wiki.pot (Wiki 1.2.3.2)  #-#-#-#-#
+#. #-#-#-#-#  wiki.pot (Wiki 1.2.3.7)  #-#-#-#-#
 #. Plugin Name of the plugin/theme
 #: lib/classes/WikiWidget.php:14 lib/classes/WikiWidget.php:16
-#: lib/classes/WikiWidget.php:26 lib/classes/WikiWidget.php:89
-#: lib/classes/WikiWidget.php:101 wiki-include.php:1652 wiki.php:27
+#: lib/classes/WikiWidget.php:26 lib/classes/WikiWidget.php:97
+#: lib/classes/WikiWidget.php:109 wiki-include.php:1676 wiki.php:27
 msgid "Wiki"
 msgstr ""
 
-#: lib/classes/WikiWidget.php:115
+#: lib/classes/WikiWidget.php:130
 msgid "Order by"
 msgstr ""
 
-#: lib/classes/WikiWidget.php:117 wiki-include.php:1598
+#: lib/classes/WikiWidget.php:132 wiki-include.php:1610
 msgid "Menu Order/Order Created"
 msgstr ""
 
-#: lib/classes/WikiWidget.php:119 wiki-include.php:1600
+#: lib/classes/WikiWidget.php:134 wiki-include.php:1612
 msgid "Random"
 msgstr ""
 
-#: lib/classes/WikiWidget.php:122
+#: lib/classes/WikiWidget.php:137
 msgid "Order"
 msgstr ""
 
-#: lib/classes/WikiWidget.php:124 wiki-include.php:1606
+#: lib/classes/WikiWidget.php:139 wiki-include.php:1618
 msgid "Ascending"
 msgstr ""
 
-#: lib/classes/WikiWidget.php:125 wiki-include.php:1607
+#: lib/classes/WikiWidget.php:140 wiki-include.php:1619
 msgid "Descending"
 msgstr ""
 
@@ -164,362 +159,366 @@ msgid ""
 "strong>."
 msgstr ""
 
-#: wiki-include.php:105 wiki-include.php:115 wiki-include.php:1500
-#: wiki-include.php:1514 wiki-include.php:1651 wiki-include.php:1661
+#: wiki-include.php:111 wiki-include.php:125 wiki-include.php:1525
+#: wiki-include.php:1539 wiki-include.php:1675 wiki-include.php:1685
 msgid "Wikis"
 msgstr ""
 
-#: wiki-include.php:105 wiki-include.php:118 wiki-include.php:1500
-#: wiki-include.php:1517
+#: wiki-include.php:112 wiki-include.php:128 wiki-include.php:1525
+#: wiki-include.php:1542
 msgid "Sub Wikis"
 msgstr ""
 
-#: wiki-include.php:378
+#: wiki-include.php:402
 msgid "You are not allowed to edit pages as this user."
 msgstr ""
 
-#: wiki-include.php:379
+#: wiki-include.php:403
 msgid "You are not allowed to create pages as this user."
 msgstr ""
 
-#: wiki-include.php:383
+#: wiki-include.php:407
 msgid "You are not allowed to edit posts as this user."
 msgstr ""
 
-#: wiki-include.php:384
+#: wiki-include.php:408
 msgid "You are not allowed to post as this user."
 msgstr ""
 
-#: wiki-include.php:469
+#: wiki-include.php:493
 msgid "You are not allowed to edit this page."
 msgstr ""
 
-#: wiki-include.php:471
+#: wiki-include.php:495
 msgid "You are not allowed to edit this post."
 msgstr ""
 
-#: wiki-include.php:630
+#: wiki-include.php:654
 msgid ""
 "You attempted to edit an item that doesn&#8217;t exist. Perhaps it was "
 "deleted?"
 msgstr ""
 
-#: wiki-include.php:633
+#: wiki-include.php:657
 msgid "You are not allowed to edit this item."
 msgstr ""
 
-#: wiki-include.php:636
+#: wiki-include.php:660
 msgid ""
 "You can&#8217;t edit this item because it is in the Trash. Please restore it "
 "and try again."
 msgstr ""
 
-#: wiki-include.php:639
+#: wiki-include.php:663
 msgid "Unknown post type."
 msgstr ""
 
-#: wiki-include.php:729
+#: wiki-include.php:752
 msgid "Compare Revisions of &#8220;%1$s&#8221;"
 msgstr ""
 
-#: wiki-include.php:730
+#: wiki-include.php:753
 msgid "Revisions"
 msgstr ""
 
-#: wiki-include.php:745
+#: wiki-include.php:768
 msgid "Revision for &#8220;%1$s&#8221; created on %2$s"
 msgstr ""
 
-#: wiki-include.php:756
+#: wiki-include.php:779
 msgid "Older: %s"
 msgstr ""
 
-#: wiki-include.php:757
+#: wiki-include.php:780
 msgid "Newer: %s"
 msgstr ""
 
-#: wiki-include.php:782
+#: wiki-include.php:805
 msgid "These revisions are identical."
 msgstr ""
 
-#: wiki-include.php:809 wiki-include.php:812
+#: wiki-include.php:832 wiki-include.php:835
 msgid "Category:"
 msgstr ""
 
-#: wiki-include.php:810 wiki-include.php:813 wiki-include.php:1945
+#: wiki-include.php:833 wiki-include.php:836 wiki-include.php:1967
 msgid "Tags:"
 msgstr ""
 
-#: wiki-include.php:852 wiki-include.php:863
+#: wiki-include.php:875 wiki-include.php:886
 msgid "Notify me of changes"
 msgstr ""
 
-#: wiki-include.php:861
+#: wiki-include.php:884
 msgid "E-mail"
 msgstr ""
 
-#: wiki-include.php:923
+#: wiki-include.php:946
 msgid "Auto Draft"
 msgstr ""
 
-#: wiki-include.php:1030 wiki-include.php:1106 wiki-include.php:1226
+#: wiki-include.php:1053 wiki-include.php:1129 wiki-include.php:1251
 msgid "Edit"
 msgstr ""
 
-#: wiki-include.php:1071 wiki-include.php:1141
+#: wiki-include.php:1094 wiki-include.php:1164
 msgid "Save"
 msgstr ""
 
-#: wiki-include.php:1072 wiki-include.php:1142
+#: wiki-include.php:1095 wiki-include.php:1165
 msgid "Cancel"
 msgstr ""
 
-#: wiki-include.php:1215
+#: wiki-include.php:1240
 msgid "Page"
 msgstr ""
 
-#: wiki-include.php:1217
+#: wiki-include.php:1242
 msgid "Discussion"
 msgstr ""
 
-#: wiki-include.php:1219
+#: wiki-include.php:1244
 msgid "History"
 msgstr ""
 
-#: wiki-include.php:1228
+#: wiki-include.php:1253
 msgid "Advanced"
 msgstr ""
 
-#: wiki-include.php:1230
+#: wiki-include.php:1255
 msgid "Create new"
 msgstr ""
 
 #. translators: post revision: 1: when, 2: author name
-#: wiki-include.php:1296
+#: wiki-include.php:1321
 msgctxt "post revision"
 msgid "%1$s by %2$s"
 msgstr ""
 
-#: wiki-include.php:1324
+#: wiki-include.php:1349
 msgid "Restore"
 msgstr ""
 
-#: wiki-include.php:1344
+#: wiki-include.php:1369
 msgid "Compare Revisions"
 msgstr ""
 
-#: wiki-include.php:1354
+#: wiki-include.php:1379
 msgctxt "revisions column name"
 msgid "Old"
 msgstr ""
 
-#: wiki-include.php:1355
+#: wiki-include.php:1380
 msgctxt "revisions column name"
 msgid "New"
 msgstr ""
 
-#: wiki-include.php:1356
+#: wiki-include.php:1381
 msgctxt "revisions column name"
 msgid "Date Created"
 msgstr ""
 
-#: wiki-include.php:1357
+#: wiki-include.php:1382
 msgid "Author"
 msgstr ""
 
-#: wiki-include.php:1358
+#: wiki-include.php:1383
 msgid "Actions"
 msgstr ""
 
-#: wiki-include.php:1536 wiki-include.php:1575
+#: wiki-include.php:1564 wiki-include.php:1587
 msgid "Wiki Settings"
 msgstr ""
 
-#: wiki-include.php:1551
+#: wiki-include.php:1579
 msgid "Nice Try..."
 msgstr ""
 
-#: wiki-include.php:1571
+#: wiki-include.php:1583
 msgid "Settings saved."
 msgstr ""
 
-#: wiki-include.php:1580
+#: wiki-include.php:1592
 msgid "Wiki Slug"
 msgstr ""
 
-#: wiki-include.php:1584
+#: wiki-include.php:1596
 msgid "Number of breadcrumbs to add to title"
 msgstr ""
 
-#: wiki-include.php:1588
+#: wiki-include.php:1600
 msgid "What do you want to call Wikis?"
 msgstr ""
 
-#: wiki-include.php:1592
+#: wiki-include.php:1604
 msgid "What do you want to call Sub Wikis?"
 msgstr ""
 
-#: wiki-include.php:1596
+#: wiki-include.php:1608
 msgid "How should Sub Wikis be ordered?"
 msgstr ""
 
-#: wiki-include.php:1604
+#: wiki-include.php:1616
 msgid "What order should Sub Wikis be ordered?"
 msgstr ""
 
-#: wiki-include.php:1613
+#: wiki-include.php:1623
+msgid "Who can edit wiki privileges?"
+msgstr ""
+
+#: wiki-include.php:1639
 msgid "Save Changes"
 msgstr ""
 
-#: wiki-include.php:1653
+#: wiki-include.php:1677
 msgid "Add Wiki"
 msgstr ""
 
-#: wiki-include.php:1654
+#: wiki-include.php:1678
 msgid "Add New Wiki"
 msgstr ""
 
-#: wiki-include.php:1655
+#: wiki-include.php:1679
 msgid "Edit Wiki"
 msgstr ""
 
-#: wiki-include.php:1656
+#: wiki-include.php:1680
 msgid "New Wiki"
 msgstr ""
 
-#: wiki-include.php:1657
+#: wiki-include.php:1681
 msgid "View Wiki"
 msgstr ""
 
-#: wiki-include.php:1658
+#: wiki-include.php:1682
 msgid "Search Wiki"
 msgstr ""
 
-#: wiki-include.php:1659
+#: wiki-include.php:1683
 msgid "No wiki found"
 msgstr ""
 
-#: wiki-include.php:1660
+#: wiki-include.php:1684
 msgid "No wikis found in Trash"
 msgstr ""
 
-#: wiki-include.php:1678
+#: wiki-include.php:1702
 msgid "Wiki Category"
 msgstr ""
 
-#: wiki-include.php:1679
+#: wiki-include.php:1703
 msgid "Search Wiki Categories"
 msgstr ""
 
-#: wiki-include.php:1680
+#: wiki-include.php:1704
 msgid "All Wiki Categories"
 msgstr ""
 
-#: wiki-include.php:1681
+#: wiki-include.php:1705
 msgid "Parent Wiki Category"
 msgstr ""
 
-#: wiki-include.php:1682
+#: wiki-include.php:1706
 msgid "Parent Wiki Category:"
 msgstr ""
 
-#: wiki-include.php:1683
+#: wiki-include.php:1707
 msgid "Edit Wiki Category"
 msgstr ""
 
-#: wiki-include.php:1684
+#: wiki-include.php:1708
 msgid "Update Wiki Category"
 msgstr ""
 
-#: wiki-include.php:1685
+#: wiki-include.php:1709
 msgid "Add New Wiki Category"
 msgstr ""
 
-#: wiki-include.php:1686
+#: wiki-include.php:1710
 msgid "New Wiki Category Name"
 msgstr ""
 
-#: wiki-include.php:1701
+#: wiki-include.php:1725
 msgid "Wiki Tag"
 msgstr ""
 
-#: wiki-include.php:1702
+#: wiki-include.php:1726
 msgid "Search Wiki Tags"
 msgstr ""
 
-#: wiki-include.php:1703
+#: wiki-include.php:1727
 msgid "Popular Wiki Tags"
 msgstr ""
 
-#: wiki-include.php:1704
+#: wiki-include.php:1728
 msgid "All Wiki Tags"
 msgstr ""
 
-#: wiki-include.php:1705
+#: wiki-include.php:1729
 msgid "Edit Wiki Tag"
 msgstr ""
 
-#: wiki-include.php:1706
+#: wiki-include.php:1730
 msgid "Update Wiki Tag"
 msgstr ""
 
-#: wiki-include.php:1707
+#: wiki-include.php:1731
 msgid "Add New Wiki Tag"
 msgstr ""
 
-#: wiki-include.php:1708
+#: wiki-include.php:1732
 msgid "New Wiki Tag Name"
 msgstr ""
 
-#: wiki-include.php:1709
+#: wiki-include.php:1733
 msgid "Separate wiki tags with commas"
 msgstr ""
 
-#: wiki-include.php:1710
+#: wiki-include.php:1734
 msgid "Add or remove wiki tags"
 msgstr ""
 
-#: wiki-include.php:1711
+#: wiki-include.php:1735
 msgid "Choose from the most used wiki tags"
 msgstr ""
 
-#: wiki-include.php:1816
+#: wiki-include.php:1838
 msgid "Wiki Privileges"
 msgstr ""
 
-#: wiki-include.php:1817
+#: wiki-include.php:1839
 msgid "Wiki E-mail Notifications"
 msgstr ""
 
-#: wiki-include.php:1897
+#: wiki-include.php:1919
 msgid "Anyone"
 msgstr ""
 
-#: wiki-include.php:1898
+#: wiki-include.php:1920
 msgid "Network users"
 msgstr ""
 
-#: wiki-include.php:1899
+#: wiki-include.php:1921
 msgid "Site users"
 msgstr ""
 
-#: wiki-include.php:1900
+#: wiki-include.php:1922
 msgid "Users who can edit posts in this site"
 msgstr ""
 
-#: wiki-include.php:1905
+#: wiki-include.php:1927
 msgid "Allow editing by"
 msgstr ""
 
-#: wiki-include.php:1941
+#: wiki-include.php:1963
 msgid "Select category..."
 msgstr ""
 
-#: wiki-include.php:1970
+#: wiki-include.php:1992
 msgid "Enable e-mail notifications"
 msgstr ""
 
-#: wiki-include.php:2160
+#: wiki-include.php:2182
 msgid "Wiki Page Changes"
 msgstr ""
 
