@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wiki 1.2.3.7\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/wiki\n"
-"POT-Creation-Date: 2013-10-14 20:24:59+00:00\n"
+"POT-Creation-Date: 2013-10-15 08:17:36+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -241,7 +241,7 @@ msgstr ""
 msgid "Category:"
 msgstr ""
 
-#: wiki-include.php:833 wiki-include.php:836 wiki-include.php:1967
+#: wiki-include.php:833 wiki-include.php:836 wiki-include.php:1968
 msgid "Tags:"
 msgstr ""
 
@@ -482,43 +482,43 @@ msgstr ""
 msgid "Choose from the most used wiki tags"
 msgstr ""
 
-#: wiki-include.php:1838
+#: wiki-include.php:1839
 msgid "Wiki Privileges"
 msgstr ""
 
-#: wiki-include.php:1839
+#: wiki-include.php:1840
 msgid "Wiki E-mail Notifications"
 msgstr ""
 
-#: wiki-include.php:1919
+#: wiki-include.php:1920
 msgid "Anyone"
 msgstr ""
 
-#: wiki-include.php:1920
+#: wiki-include.php:1921
 msgid "Network users"
 msgstr ""
 
-#: wiki-include.php:1921
+#: wiki-include.php:1922
 msgid "Site users"
 msgstr ""
 
-#: wiki-include.php:1922
+#: wiki-include.php:1923
 msgid "Users who can edit posts in this site"
 msgstr ""
 
-#: wiki-include.php:1927
+#: wiki-include.php:1928
 msgid "Allow editing by"
 msgstr ""
 
-#: wiki-include.php:1963
+#: wiki-include.php:1964
 msgid "Select category..."
 msgstr ""
 
-#: wiki-include.php:1992
+#: wiki-include.php:1993
 msgid "Enable e-mail notifications"
 msgstr ""
 
-#: wiki-include.php:2182
+#: wiki-include.php:2183
 msgid "Wiki Page Changes"
 msgstr ""
 
