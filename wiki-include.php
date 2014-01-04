@@ -14,7 +14,7 @@ class Wiki {
      *
      * @var		string	$current_version	Current version
      */
-    var $current_version = '1.2.3.8';
+    var $current_version = '1.2.3.9';
     /**
      * @var		string	$translation_domain	Translation domain
      */
@@ -795,7 +795,7 @@ class Wiki {
 						add_filter( "_wp_post_revision_field_$field", 'htmlspecialchars' );
 						$rcontent = apply_filters( "_wp_post_revision_field_$field", $revision->$field, $field );
 				}
-					$new_content .= '<tr id="revision-field-<?php echo $field; ?>">';
+					$new_content .= '<tr id="revision-field-' . $field . '">';
 					$new_content .= '<th scope="row">'.esc_html( $field_title ).'</th>';
 					$new_content .= '<td><div class="pre">'.$rcontent.'</div></td>';
 					$new_content .= '</tr>';
