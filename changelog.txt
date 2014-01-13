@@ -5,6 +5,13 @@ Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
 
+1.2.4
+----------------------------------------------------------------------
+- Each site on a network can have separate wiki settings now
+- Rewrite rules get flushed more reliably now (e.g. when saving settings, activating the plugin or adding a new blog)
+- Fixed: Security hole where a non-privileged user could still edit a wiki using the frontend editor http://wp.mu/8kn
+- Code optimizations and enhancements
+
 1.2.3.9 - 01/04/2014 - Jonathan Cowher
 ----------------------------------------------------------------------
 - Fixed: History tab displays erroneous text
