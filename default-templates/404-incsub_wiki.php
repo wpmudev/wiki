@@ -9,7 +9,7 @@ get_header( 'wiki' );
                 <h1 class="entry-title"><?php the_title(); ?></h1>
                 
                 <div class="incsub_wiki incsub_wiki_single">
-                    <?php _e('Wiki page you are looking for does not exist. Feel free to create it yourself.', $wiki->translation_domain); ?>
+                    <?php _e('Wiki page you are looking for does not exist. Feel free to create it yourself.', 'wiki'); ?>
                     <div class="incsub_wiki_tabs incsub_wiki_tabs_top"><div class="incsub_wiki_clear"></div></div>
                 </div>
                 <?php
