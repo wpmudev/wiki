@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/wiki
 Description: Add a wiki to your blog
 Author: S H Mohanjith (Incsub)
 WDP ID: 168
-Version: 1.2.4
+Version: 1.2.4.1
 Author URI: http://premium.wpmudev.org
 Text Domain: wiki
 */
@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 class Wiki {
 	// @var string Current version
-	var $version = '1.2.4';
+	var $version = '1.2.4.1';
 	// @var string The db prefix
 	var $db_prefix = '';
 	// @var string The plugin settings
@@ -51,10 +51,6 @@ class Wiki {
 			return;
 		}
 
-		// Activation/deactivation hooks
-		register_activation_hook(__FILE__, array(&$this, 'install'));
-		register_deactivation_hook(__FILE__, array(&$this, 'uninstall'));
-		
 		add_action('init', array(&$this, 'init'));
 		add_action('init', array(&$this, 'maybe_flush_rewrites'), 999);
 		
@@ -1484,12 +1480,14 @@ class Wiki {
 		global $wpdb;
 		
 		// Move wiki_version option from blog table to sitemeta table
-		if ( $wiki_version = get_option('wiki_version') )
+		if ( $wiki_version = get_option('wiki_version') ) {
 			update_site_option('wiki_version', $wiki_version);
+			delete_option('wiki_version');
+		}
 		
 		if ( get_site_option('wiki_version', false) == $this->version )
 			return;
-			
+		
 		// WordPress database upgrade/creation functions
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		
@@ -1576,15 +1574,6 @@ class Wiki {
 	}
 					
 	/**
-	 * Deactivation hook
-	 * 
-	 * @see		http://codex.wordpress.org/Function_Reference/register_deactivation_hook
-	 */
-	function uninstall() {
-		// Nothing to do here
-	}
-		
-	/**
 	 * Initialize the plugin
 	 * 
 	 * @see		http://codex.wordpress.org/Plugin_API/Action_Reference
@@ -1593,7 +1582,11 @@ class Wiki {
 	function init() {
 		global $wpdb, $wp_rewrite, $current_user, $blog_id, $wp_roles;
 		
-		$this->init_admin_pages();
+		if ( is_admin() ) {
+			$this->install(is_multisite() ? true : false);	//we run this here because activation hooks aren't triggered when updating - see http://wp.mu/8kv
+			$this->init_admin_pages();
+		}
+		
 		$this->settings = get_option('wiki_settings');
 		
 		if (preg_match('/mu\-plugin/', $this->plugin_dir) > 0)
@@ -1665,24 +1658,16 @@ class Wiki {
 	 */
 	function get_dir_files( $dir, $ext = 'php' ) {
 		$files = array();
+		$dir = trailingslashit($dir);
 		
 		if ( !is_null($ext) )
 			$ext = '.' . $ext;
 		
-		if ( false === file_exists($dir) )
-			return false;
-			
-		if ( false === ($dh = opendir($dir)) )
+		if ( !is_readable($dir) )
 			return false;
 		
-		while ( false !== ($file = readdir($dh)) ) {
-			$filepath = str_replace('//', '/', $dir . '/' . $file);
-			if ( (is_null($ext) && is_file($filepath) && is_readable($filepath)) || (is_readable($filepath) && $ext == substr($filepath, -4)) )
-				$files[] = $filepath;
-		}
+		$files = glob($dir . '*' . $ext);
 		
-		closedir($dh);
-
 		return ( empty($files) ) ? false : $files;
 	}
 	
