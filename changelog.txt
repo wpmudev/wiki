@@ -7,7 +7,7 @@ Change Log:
 
 1.2.4.1
 ----------------------------------------------------------------------
--	Fixed: After automatically updating, permalinks would need to be manually refreshed
+-	Fixed: Install/update routine wouldn't run when automatically updating
 
 1.2.4
 ----------------------------------------------------------------------
