@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/wiki
 Description: Add a wiki to your blog
 Author: S H Mohanjith (Incsub)
 WDP ID: 168
-Version: 1.2.4.1
+Version: 1.2.4.2
 Author URI: http://premium.wpmudev.org
 Text Domain: wiki
 */
@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 class Wiki {
 	// @var string Current version
-	var $version = '1.2.4.1';
+	var $version = '1.2.4.2';
 	// @var string The db prefix
 	var $db_prefix = '';
 	// @var string The plugin settings
@@ -51,7 +51,13 @@ class Wiki {
 		$wpmudev_notices[] = array(
 			'id' => 168,
 			'name' => 'Wiki',
-			'screens' => array();
+			'screens' => array(
+				'incsub_wiki_page_incsub_wiki',
+				'edit-incsub_wiki_tag',
+				'edit-incsub_wiki_category',
+				'incsub_wiki',
+				'edit-incsub_wiki',
+			),
 		);
 		include_once $this->plugin_dir . 'lib/dash-notice/wpmudev-dash-notification.php';
 
@@ -62,6 +68,7 @@ class Wiki {
 
 		add_action('init', array(&$this, 'init'));
 		add_action('init', array(&$this, 'maybe_flush_rewrites'), 999);
+		//add_action('current_screen', function(){ echo get_current_screen()->id; });
 		
 		add_action('wpmu_new_blog', array(&$this, 'new_blog'), 10, 6);
 		
