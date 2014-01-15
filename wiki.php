@@ -45,7 +45,16 @@ class Wiki {
 
 	function __construct() {
 		$this->init_vars();
-		
+
+		//load dashboard notices
+		global $wpmudev_notices;
+		$wpmudev_notices[] = array(
+			'id' => 168,
+			'name' => 'Wiki',
+			'screens' => array();
+		);
+		include_once $this->plugin_dir . 'lib/dash-notice/wpmudev-dash-notification.php';
+
 		if ( WIKI_DEMO_FOR_NON_SUPPORTER && function_exists('is_supporter') && !is_supporter() ) {
 			add_action('admin_menu', array(&$this, 'non_suppporter_admin_menu'));
 			return;
@@ -1412,7 +1421,7 @@ class Wiki {
 						if ($edit_post) {
 							$current_privileges = get_post_meta($edit_post->ID, 'incsub_wiki_privileges', true);
 							
-							if ( false === $current_privileges ) {
+							if ( empty($current_privileges) ) {
 								$current_privileges = array('edit_posts');
 							}
 							
@@ -1593,9 +1602,9 @@ class Wiki {
 			load_muplugin_textdomain('wiki', dirname(plugin_basename(__FILE__)).'/languages');
 		else
 			load_plugin_textdomain('wiki', false, dirname(plugin_basename(__FILE__)).'/languages');
-			
+		
+		$this->register_taxonomies();	// taxonomies MUST be registered before custom post types
 		$this->register_post_types();
-		$this->register_taxonomies();
 		
 		if (isset($_REQUEST['action'])) {
 			switch ($_REQUEST['action']) {
@@ -1711,6 +1720,10 @@ class Wiki {
 					'with_front' => false
 				),
 				'menu_icon' => $this->plugin_url . '/images/icon.png',
+				'taxonomies' => array(
+					'incsub_wiki_category',
+					'incsub_wiki_tag',
+				),
 			)
 		);
 	}
@@ -1719,7 +1732,6 @@ class Wiki {
 	 * Registers plugin taxonomies
 	 * @since 1.2.4
 	 */
-	
 	function register_taxonomies() {
 		$slug = $this->settings['slug'] . '/' . $this->slug_categories;
 		register_taxonomy('incsub_wiki_category', 'incsub_wiki', array(
@@ -1748,7 +1760,6 @@ class Wiki {
 			),
 			'show_admin_column' => true,
 		));
-		register_taxonomy_for_object_type('incsub_wiki_category', 'incsub_wiki');
 
 		$slug = $this->settings['slug'] . '/' . $this->slug_tags;
 		register_taxonomy('incsub_wiki_tag', 'incsub_wiki', array(
@@ -1778,8 +1789,6 @@ class Wiki {
 			),
 			'show_admin_column' => true,
 		));
-		
-		register_taxonomy_for_object_type('incsub_wiki_tag', 'incsub_wiki');
 	}
 
 	function wp_enqueue_scripts() {
@@ -2153,5 +2162,3 @@ Cancel subscription: CANCEL_URL";
 }
 
 $wiki = new Wiki();
-
-include_once 'lib/wpmudev-dashboard-notification/wpmudev-dash-notification.php';
