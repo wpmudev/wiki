@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/wiki
 Description: Add a wiki to your blog
 Author: S H Mohanjith (Incsub)
 WDP ID: 168
-Version: 1.2.4.2
+Version: 1.2.4.3
 Author URI: http://premium.wpmudev.org
 Text Domain: wiki
 */
@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 class Wiki {
 	// @var string Current version
-	var $version = '1.2.4.2';
+	var $version = '1.2.4.3';
 	// @var string The db prefix
 	var $db_prefix = '';
 	// @var string The plugin settings
@@ -80,7 +80,7 @@ class Wiki {
 		
 		add_action('widgets_init', array(&$this, 'widgets_init'));
 		add_action('pre_post_update', array(&$this, 'send_notifications'), 50, 1);
-		add_filter('the_content', array(&$this, 'theme'), 1);
+		add_filter('the_content', array(&$this, 'theme'), 999);	//set to really low priority. we want this to run after all other filters, otherwise undesired output may result.
 		add_action('template_include', array(&$this, 'load_templates') );
 		
 		add_filter('term_link', array(&$this, 'term_link'), 10, 3);
@@ -566,6 +566,9 @@ class Wiki {
 			return $content;
 		
 		if ( post_password_required() )
+			return $content;
+			
+		if ( function_exists('is_main_query') && !is_main_query() )
 			return $content;
 		
 		$revision_id = isset($_REQUEST['revision'])?absint($_REQUEST['revision']):0;
@@ -1127,7 +1130,7 @@ class Wiki {
 		if ( 'private' == $edit_post->post_status ) {
 				$edit_post->post_password = '';
 				$visibility = 'private';
-					 $visibility_trans = __('Private');
+					$visibility_trans = __('Private');
 		} elseif ( !empty( $edit_post->post_password ) ) {
 				$visibility = 'password';
 				$visibility_trans = __('Password protected');
@@ -1143,11 +1146,23 @@ class Wiki {
 		$return .= '<input type="hidden" name="action" id="wiki_action" value="editpost" />';
 		$return .= '<div><input type="text" name="post_title" id="wiki_title" value="'.$edit_post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
 		$return .= '<div>';
-		if (version_compare($wp_version, "3.3") >= 0) {
+		
+		$using_built_in_editor = false;
+		if (version_compare($wp_version, "3.3") >= 0 && ob_get_level() ) {
+			//!TODO - this is hacky, but as of WP 3.8 there is no way of returning the generated html from wp_editor()
+			$using_built_in_editor = true;
+			ob_start();
 			wp_editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content', 'wpautop' => false));
-		} else {
-			$return .= '<textarea tabindex="2" name="content" id="wikicontent" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>';
+			$return .= ob_get_clean();
 		}
+		
+		if ( !$using_built_in_editor ) {
+			$return .= '<textarea tabindex="2" name="content" id="wikicontent" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>';
+			require_once 'lib/classes/WikiAdmin.php';
+			$wiki_admin = new WikiAdmin();
+			$wiki_admin->tiny_mce(true, array("editor_selector" => "incusb_wiki_tinymce"));
+		}
+		
 		$return .= '</div>';
 		$return .= '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_{$edit_post->ID}").'" />';
 		
@@ -1162,13 +1177,6 @@ class Wiki {
 		
 		if ($showheader) {
 			$return .= '</div>';
-		}
-		
-		if (version_compare($wp_version, "3.3") < 0) {
-			require_once 'lib/classes/WikiAdmin.php';
-			
-			$wiki_admin = new WikiAdmin();
-			$wiki_admin->tiny_mce(true, array("editor_selector" => "incusb_wiki_tinymce"));
 		}
 		
 		$return .= '<style type="text/css">'.
@@ -1616,6 +1624,7 @@ class Wiki {
 		if (isset($_REQUEST['action'])) {
 			switch ($_REQUEST['action']) {
 				case 'editpost':
+					// editing an existing wiki using the frontend editor
 					if (wp_verify_nonce($_POST['_wpnonce'], "wiki-editpost_{$_POST['post_ID']}")) {
 						$post_id = $this->edit_post($_POST);
 						wp_redirect(get_permalink($post_id));
