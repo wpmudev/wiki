@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/wiki
 Description: Add a wiki to your blog
 Author: S H Mohanjith (Incsub)
 WDP ID: 168
-Version: 1.2.4.3
+Version: 1.2.4.4
 Author URI: http://premium.wpmudev.org
 Text Domain: wiki
 */
@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 class Wiki {
 	// @var string Current version
-	var $version = '1.2.4.3';
+	var $version = '1.2.4.4';
 	// @var string The db prefix
 	var $db_prefix = '';
 	// @var string The plugin settings
@@ -1108,7 +1108,7 @@ class Wiki {
 			$return .= '<div class="incsub_wiki incsub_wiki_single">';
 			$return .= '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
 		}
-		$return .= '<h3>'.__('Edit', 'wiki').'</h3>';
+		$return .= '<h2>'.__('Edit', 'wiki').'</h2>';
 		$return .=	'<form action="'.get_permalink().'" method="post">';
 		if (isset($_REQUEST['eaction']) && $_REQUEST['eaction'] == 'create') {
 			$edit_post = $this->get_default_post_to_edit($post->post_type, true, $post->ID);
@@ -1147,18 +1147,23 @@ class Wiki {
 		$return .= '<div><input type="text" name="post_title" id="wiki_title" value="'.$edit_post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
 		$return .= '<div>';
 		
-		$using_built_in_editor = false;
-		if (version_compare($wp_version, "3.3") >= 0 && ob_get_level() ) {
-			//!TODO - this is hacky, but as of WP 3.8 there is no way of returning the generated html from wp_editor()
-			$using_built_in_editor = true;
-			ob_start();
-			wp_editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content', 'wpautop' => false));
-			$return .= ob_get_clean();
-		}
-		
-		if ( !$using_built_in_editor ) {
+		if ( version_compare($wp_version, "3.3") >= 0 ) {
+			if ( @ob_start() ) {
+				// Output buffering is on, capture the output from wp_editor() and append it to the $return variable
+				wp_editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content', 'wpautop' => false));
+				$return .= ob_get_clean();
+			} else {
+				/*
+				This is hacky, but without output buffering on we needed to make a copy of the built-in _WP_Editors class and
+				change the editor() method to return the output instead of echo it. The only bad thing about this is that we
+				also had to remove the media_buttons action so plugins/themes won't be able to tie into it
+				*/
+				require_once $this->plugin_dir . 'lib/classes/WPEditor.php';
+				$return .= WikiEditor::editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content', 'wpautop' => false));
+			}
+		} else {		
 			$return .= '<textarea tabindex="2" name="content" id="wikicontent" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>';
-			require_once 'lib/classes/WikiAdmin.php';
+			require_once $this->plugin_dir . 'lib/classes/WikiAdmin.php';
 			$wiki_admin = new WikiAdmin();
 			$wiki_admin->tiny_mce(true, array("editor_selector" => "incusb_wiki_tinymce"));
 		}
@@ -1167,9 +1172,10 @@ class Wiki {
 		$return .= '<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_{$edit_post->ID}").'" />';
 		
 		if (is_user_logged_in()) {
-			$return .=	 $this->get_meta_form();
+			$return .= $this->get_meta_form(true);
 		}
-		$return .= '<div class="incsub_wiki_clear">';
+		
+		$return .= '<div class="incsub_wiki_clear incsub_wiki_form_buttons">';
 		$return .= '<input type="submit" name="save" id="btn_save" value="'.__('Save', 'wiki').'" />&nbsp;';
 		$return .= '<a href="'.get_permalink().'">'.__('Cancel', 'wiki').'</a>';
 		$return .= '</div>';
@@ -1187,14 +1193,17 @@ class Wiki {
 		return $return;
 	}
 		
-	function get_meta_form() {
+	function get_meta_form( $frontend = false ) {
 		global $post;
 		
 		$content	= '';
+		$content .= ( $frontend ) ? '<h3 class="incsub_wiki_header">' . __('Wiki Categories/Tags', 'wiki') . '</h3>' : '';
 		$content .= '<div class="incsub_wiki_meta_box">'.$this->wiki_taxonomies(false).'</div>';
+		$content .= ( $frontend ) ? '<h3 class="incsub_wiki_header">' . __('Wiki Notifications', 'wiki') . '</h3>' : '';
 		$content .= '<div class="incsub_wiki_meta_box">'.$this->notifications_meta_box($post, false).'</div>';
 		
 		if (current_user_can('edit_wiki_privileges')) {
+			$content .= ( $frontend ) ? '<h3 class="incsub_wiki_header">' . __('Wiki Privileges', 'wiki') . '</h3>' : '';
 			$content .= '<div class="incsub_wiki_meta_box">'.$this->privileges_meta_box($post, false).'</div>';
 		}
 		
@@ -1408,7 +1417,7 @@ class Wiki {
 		$capable = false;
 		
 		if (preg_match('/(_wiki|_wikis)/i', join($caps, ',')) > 0) {
-			if (in_array('administrator', $current_user->roles)) {
+			if (in_array('administrator', $current_user->roles) || is_super_admin()) {
 				foreach ($caps as $cap) {
 					$allcaps[$cap] = 1;
 				}

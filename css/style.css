@@ -1,131 +1,177 @@
 .widget_incsub_wiki a.current {
-    color: #000;
-    font-weight: bold;
+	color: #000;
+	font-weight: bold;
 }
 
 .incsub_wiki_clear {
-    clear: both;
+	clear: both;
 }
 
 .incsub_wiki_tabs {
-    border: solid #999;
-    border-width: 0 0 1px 0;
+	line-height: 1 !important;
+	margin-bottom: 10px;
+}
+
+.incsub_wiki_tabs:after {
+	position: relative;
+		top: -1px;
+		left: 0;
+	background: #999;
+	content: "";
+	display: block;
+	font-size: 0;
+	height: 1px;
+	line-height: 0;
+	width: 100%;
 }
 
 .incsub_wiki_tabs ul {
-    margin: 0 !important;
-    padding: 0;
+	line-height: 1 !important;
+	margin: 0 !important;
+	padding: 0;
 }
 
 .incsub_wiki_tabs ul.left, .incsub_wiki_tabs ul.right {
-    width: auto !important;
+	width: auto !important;
 }
 
 .incsub_wiki_tabs ul.left {
-    float: left;
-    margin-left: 5px !important;
+	float: left;
 }
 
 .incsub_wiki_tabs ul.right {
-    float: right;
-    margin-right: 5px !important;
+	float: right;
 }
 
 .incsub_wiki_tabs li {
-    display: inline !important;
-    border: solid #999 !important;
-    border-width: 1px 1px 0 1px !important;
-    padding-bottom: 0.1em !important;
-    margin: 0 5px 0 0 !important;
-    color: #333 !important;
-    background: #efefef !important;
+	display: inline-block !important;
+	border: solid #999 !important;
+	border-radius: 4px 4px 0 0;
+	border-width: 1px 1px 0 1px !important;
+	font-size: 0.9em !important;
+	line-height: 1 !important;
+	margin: 0 0 0 5px !important;
+	padding: 0 !important;
+	color: #333 !important;
+	background: #efefef !important;
 }
 
-.incsub_wiki_tabs .right li {
-    margin: 0 0 0 0.5em !important;
+.incsub_wiki_tabs li:hover {
+	border-color: #666 !important;
+}
+
+.incsub_wiki_tabs li:first-child {
+	margin-left: 0 !important;
 }
 
 .incsub_wiki_tabs li.current {
-    border-bottom: 1px solid white !important;
-    color: black !important;
-    background: white !important;
+	border-bottom: 1px solid white !important;
+	color: black !important;
+	background: white !important;
+	position: relative;
+		z-index: 5;
+}
+
+.incsub_wiki_tabs li.current:after {
+	position: absolute;
+		left: 0;
+		bottom: -1px;
+	background: #fff;
+	content: "";
+	display: block;
+	height: 2px;
+	width: 100%;
 }
 
 .incsub_wiki_tabs li a {
-    padding: 0 0.7em !important;
-    text-decoration: none !important;
-    color: inherit !important;
+	display: block;
+	line-height: 1 !important;	
+	padding: 5px 8px !important;
+	text-decoration: none !important;
+	color: inherit !important;
 }
 
 .type-incsub_wiki .post-edit-link {
-    display: none;
+	display: none;
 }
 
 .incsub_wiki_content {
-    margin: 0.2em 0.5em;
+	margin: 0.2em 0.5em;
 }
 
 .incsub_wiki_meta_box {
-    clear: left;
+	clear: left;
 }
 
-.incsub_wiki_br_roles {
-    display: none;
-}
+/*.incsub_wiki_br_roles {
+	display: none;
+}*/
 
-.incsub_wiki_label_roles {
-    margin-right: 10px;
+.incsub_wiki_label_roles input {
+	display: inline-block;
+	margin-right: 5px;
 }
 
 .incsub_wiki_title {
-    border-style: solid;
-    border-width: 1px;
-    font-size: 1.7em;
-    line-height: 100%;
-    outline: medium none;
-    padding: 3px 4px;
-    width: 100%;
+	border-style: solid;
+	border-width: 1px;
+	font-size: 1.7em;
+	line-height: 100%;
+	outline: medium none;
+	padding: 3px 4px;
+	width: 100%;
 }
 
 #content .wp_themeSkin tr td {
-    padding: 0;
+	padding: 0;
 }
 
 .wp_themeSkin tr.mceFirst td.mceToolbar {
-    background: url("../images/ed-bg.gif") repeat-x scroll left top #DFDFDF;
-    border-color: #DFDFDF;
+	background: url("../images/ed-bg.gif") repeat-x scroll left top #DFDFDF;
+	border-color: #DFDFDF;
 }
 
 .wp_themeSkin .mceButton {
-    color: #B2B2B2;
+	color: #B2B2B2;
 }
 
 #content table.mceToolbar {
-    width: auto;
-    margin: 0 2px 2px;
+	width: auto;
+	margin: 0 2px 2px;
 }
 
 div.incsub_wiki_top span.incsub_wiki_crumbs, 
 div.incsub_wiki_top a.incsub_wiki_crumbs {
-    font-size: 1.2em;
-    color: #888;
+	font-size: 1.2em;
+	color: #888;
 }
 
 div.incsub_wiki_top {
-    padding-bottom: 5px;
-    font-size: 0.7em;
-    color: #888;
+	padding-bottom: 5px;
+	font-size: 0.7em;
+	color: #888;
 }
 
 #content div.incsub_wiki .entry-content {
-    padding-top: 0;
+	padding-top: 0;
 }
 
 .wp_themeSkin table.mceLayout {
-    background: #fff;
-    margin-top: 5px;
+	background: #fff;
+	margin: 5px 0 20px;
 }
 
 input.incsub_wiki_title {
-    width: 99%;
+	display: inline-block;
+	margin-bottom: 20px;
+	width: 99%;
+}
+
+.incsub_wiki_form_buttons {
+	padding-top: 20px;
+}
+
+.incsub_wiki_form_buttons input {
+	display: inline-block;
+	margin-right: 10px;
 }
