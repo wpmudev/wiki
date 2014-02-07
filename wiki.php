@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/wiki
 Description: Add a wiki to your blog
 Author: WPMU DEV
 WDP ID: 168
-Version: 1.2.4.4
+Version: 1.2.4.5
 Author URI: http://premium.wpmudev.org
 Text Domain: wiki
 */
@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 class Wiki {
 	// @var string Current version
-	var $version = '1.2.4.4';
+	var $version = '1.2.4.5';
 	// @var string The db prefix
 	var $db_prefix = '';
 	// @var string The plugin settings
@@ -1011,75 +1011,7 @@ class Wiki {
 		
 		update_post_meta( $post->ID, '_edit_lock', $lock );
 	}
-	
-	function get_new_wiki_form() {
-		global $wp_version, $wp_query, $edit_post, $post_id, $post_ID;
 		
-		echo '<div class="incsub_wiki incsub_wiki_single">';
-		echo '<div class="incsub_wiki_tabs incsub_wiki_tabs_top"><div class="incsub_wiki_clear"></div></div>';
-			
-		echo '<h3>'.__('Edit', 'wiki').'</h3>';
-		echo	'<form action="" method="post">';
-		$edit_post = $this->get_default_post_to_edit(get_query_var('post_type'), true, 0);
-		
-		$post_id = $edit_post->ID;
-		$post_ID = $post_id;
-		
-		$slug_parts = preg_split('/\//', $wp_query->query_vars['incsub_wiki']);
-		
-		if (count($slug_parts) > 1) {
-			for ($i=count($slug_parts)-1; $i>=0; $i--) {
-				$parent_post = get_posts(array('name' => $slug_parts[$i], 'post_type' => 'incsub_wiki', 'post_status' => 'publish'));
-				if (is_array($parent_post) && count($parent_post) > 0) {
-					break;
-				}
-			}
-			$parent_post = $parent_post[0];
-		}
-		
-		echo	'<input type="hidden" name="parent_id" id="parent_id" value="'.$parent_post->ID.'" />';
-		echo	'<input type="hidden" name="original_publish" id="original_publish" value="Publish" />';
-		echo	'<input type="hidden" name="publish" id="publish" value="Publish" />';
-		echo	'<input type="hidden" name="post_type" id="post_type" value="'.$edit_post->post_type.'" />';
-		echo	'<input type="hidden" name="post_ID" id="wiki_id" value="'.$edit_post->ID.'" />';
-		echo	'<input type="hidden" name="post_status" id="wiki_id" value="published" />';
-		echo	'<input type="hidden" name="comment_status" id="comment_status" value="open" />';
-		echo	'<input type="hidden" name="action" id="wiki_action" value="editpost" />';
-		echo	'<div><input type="hidden" name="post_title" id="wiki_title" value="'.ucwords(get_query_var('name')).'" class="incsub_wiki_title" size="30" /></div>';
-		echo	'<div>';
-		if (version_compare($wp_version, "3.3") >= 0) {
-			wp_editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content', 'wpautop' => false));
-		} else {
-			echo '<textarea tabindex="2" name="content" id="wikicontent" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>';
-		}
-		echo	'</div>';
-		echo	'<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_{$edit_post->ID}").'" />';
-		
-		if (is_user_logged_in()) {
-			echo	 $this->get_meta_form();
-		}
-		echo	'<div class="incsub_wiki_clear">';
-		echo	'<input type="submit" name="save" id="btn_save" value="'.__('Save', 'wiki').'" />&nbsp;';
-		echo	'<a href="'.get_permalink().'">'.__('Cancel', 'wiki').'</a>';
-		echo	'</div>';
-		echo	'</form>';
-		echo	'</div>';
-		
-		if (version_compare($wp_version, "3.3") < 0) {
-			require_once 'lib/classes/WikiAdmin.php';
-			
-			$wiki_admin = new WikiAdmin();
-			$wiki_admin->tiny_mce(true, array("editor_selector" => "incusb_wiki_tinymce"));
-		}
-		
-		echo '<style type="text/css">'.
-			'#comments { display: none; }'.
-			'.comments { display: none; }'.
-		'</style>';
-		
-		return '';
-	}
-	
 	/**
 	 * Safely retrieve a setting
 	 *
@@ -1152,7 +1084,7 @@ class Wiki {
 		if ( version_compare($wp_version, "3.3") >= 0 ) {
 			if ( @ob_start() ) {
 				// Output buffering is on, capture the output from wp_editor() and append it to the $return variable
-				wp_editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content', 'wpautop' => false));
+				wp_editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content'));
 				$return .= ob_get_clean();
 			} else {
 				/*
@@ -1161,7 +1093,7 @@ class Wiki {
 				also had to remove the media_buttons action so plugins/themes won't be able to tie into it
 				*/
 				require_once $this->plugin_dir . 'lib/classes/WPEditor.php';
-				$return .= WikiEditor::editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content', 'wpautop' => false));
+				$return .= WikiEditor::editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content'));
 			}
 		} else {		
 			$return .= '<textarea tabindex="2" name="content" id="wikicontent" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>';
@@ -2021,7 +1953,7 @@ class Wiki {
 			do_action( 'incsub_wiki_save_taxonomy_category', $post_id, $wiki_category );
 		}
 			
-		if ( $post->post_type == "incsub_wiki" && isset( $_POST['incsub_wiki_privileges_meta'] ) ) {
+		if ( $post->post_type == "incsub_wiki" && isset( $_POST['incsub_wiki_privileges'] ) ) {
 			$meta = get_post_custom($post_id);
 			
 			update_post_meta($post_id, 'incsub_wiki_privileges', $_POST['incsub_wiki_privileges']);
