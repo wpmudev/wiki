@@ -13,7 +13,7 @@ get_header( 'wiki' );
                     <div class="incsub_wiki_tabs incsub_wiki_tabs_top"><div class="incsub_wiki_clear"></div></div>
                 </div>
                 <?php
-                echo $wiki->get_new_wiki_form(false);
+                $wiki->new_wiki_form(false);
                 ?>
             </div>
         </div>
