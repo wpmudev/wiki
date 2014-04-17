@@ -175,3 +175,33 @@ input.incsub_wiki_title {
 	display: inline-block;
 	margin-right: 10px;
 }
+
+.incsub_wiki_message {
+	position: relative;
+	background: green;
+	border-radius: 5px;
+	color: #fff;
+	line-height: 1;
+	margin-bottom: 20px;
+	padding: 15px;
+}
+
+.incsub_wiki_message a.dismiss,
+.incsub_wiki_message a.dismiss:hover {
+	position: absolute;
+		top: 50%;
+		right: 10px;
+	color: #fff;
+	cursor: pointer;
+	display: block;
+	font-size: 24px;
+	margin: -14px 0 0;
+	padding: 0;
+	text-decoration: none;
+}
+
+#wp-wikicontent-wrap * {
+		-moz-box-sizing: content-box;
+		-webkit-box-sizing: content-box;
+	box-sizing: content-box;
+}

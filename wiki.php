@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/wiki
 Description: Add a wiki to your blog
 Author: WPMU DEV
 WDP ID: 168
-Version: 1.2.4.6
+Version: 1.2.5
 Author URI: http://premium.wpmudev.org
 Text Domain: wiki
 */
@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 class Wiki {
 	// @var string Current version
-	var $version = '1.2.4.6';
+	var $version = '1.2.5';
 	// @var string The db prefix
 	var $db_prefix = '';
 	// @var string The plugin settings
@@ -44,26 +44,39 @@ class Wiki {
 	var $plugin_dir = '';
 	// @var string The base url of the plugin
 	var $plugin_url = '';
+	
+	/**
+	 * Refers to our single instance of the class
+	 *
+	 * @since 1.2.5
+	 * @access private
+	 */
+	private static $_instance = null;
 
-	function __construct() {
+	/**
+	 * Gets the single instance of the class
+	 *
+	 * @since 1.2.5
+	 * @access public
+	 */
+	public static function get_instance() {
+		if ( is_null(self::$_instance) ) {
+			self::$_instance = new Wiki();
+		}
+		
+		return self::$_instance;
+	}
+
+	/**
+	 * Constructor function
+	 *
+	 * @since 1.2.5
+	 * @access private
+	 */
+	private function __construct() {
 		$this->init_vars();
-
-		//load dashboard notices
-		global $wpmudev_notices;
-		$wpmudev_notices[] = array(
-			'id' => 168,
-			'name' => 'Wiki',
-			'screens' => array(
-				'incsub_wiki_page_incsub_wiki',
-				'edit-incsub_wiki_tag',
-				'edit-incsub_wiki_category',
-				'incsub_wiki',
-				'edit-incsub_wiki',
-			),
-		);
-		include_once $this->plugin_dir . 'lib/dash-notice/wpmudev-dash-notification.php';
-
-		if ( WIKI_DEMO_FOR_NON_SUPPORTER && function_exists('is_supporter') && !is_supporter() ) {
+		
+		if ( WIKI_DEMO_FOR_NON_SUPPORTER && function_exists('is_supporter') && ! is_supporter() ) {
 			add_action('admin_menu', array(&$this, 'non_suppporter_admin_menu'));
 			return;
 		}
@@ -85,7 +98,6 @@ class Wiki {
 		add_filter('the_content', array(&$this, 'theme'), 999);	//set to really low priority. we want this to run after all other filters, otherwise undesired output may result.
 		add_action('template_include', array(&$this, 'load_templates') );
 		
-		add_filter('term_link', array(&$this, 'term_link'), 10, 3);
 		add_filter('name_save_pre', array(&$this, 'name_save'));
 		
 		add_filter('role_has_cap', array(&$this, 'role_has_cap'), 10, 3);
@@ -582,6 +594,11 @@ class Wiki {
 		
 		if ($action != 'edit') {
 			$new_content .= '<div class="incsub_wiki incsub_wiki_single">';
+			
+			if ( isset($_GET['restored']) ) {
+				$new_content .= '<div class="incsub_wiki_message">' . __('Revision restored successfully', 'wiki') . ' <a class="dismiss" href="#">x</a></div>';
+			}
+			
 			$new_content .= '<div class="incsub_wiki_tabs incsub_wiki_tabs_top">' . $this->tabs() . '<div class="incsub_wiki_clear"></div></div>';
 			$new_content .= $this->decider($content, $action, $revision_id, $left, $right);
 		} else {
@@ -657,11 +674,11 @@ class Wiki {
 					$redirect = get_permalink().'?action=edit';
 					break;
 				}
-
+				
 				check_admin_referer( "restore-post_$post->ID|$revision->ID" );
 
 				wp_restore_post_revision( $revision->ID );
-				$redirect = add_query_arg( array( 'message' => 5, 'revision' => $revision->ID ), get_permalink().'?action=edit'	 );
+				$redirect = add_query_arg('restored', 1, get_permalink());
 				break;
 			case 'diff':
 				if ( !$left_revision	= get_post( $left ) ) {
@@ -796,18 +813,21 @@ class Wiki {
 				
 				$taxonomy = "";
 				
-				$category_list = get_the_term_list( 0, 'incsub_wiki_category', __( 'Category:', 'wiki' ) . ' <span class="incsub_wiki-category">', '', '</span> ' );
-				$tags_list = get_the_term_list( 0, 'incsub_wiki_tag', __( 'Tags:', 'wiki' ) . ' <span class="incsub_wiki-tags">', ' ', '</span> ' );
+				if ( class_exists('Wiki_Premium') ) {
+					$category_list = get_the_term_list( 0, 'incsub_wiki_category', __( 'Category:', 'wiki' ) . ' <span class="incsub_wiki-category">', '', '</span> ' );
+					$tags_list = get_the_term_list( 0, 'incsub_wiki_tag', __( 'Tags:', 'wiki' ) . ' <span class="incsub_wiki-tags">', ' ', '</span> ' );
+					
+					$taxonomy .= apply_filters('the_terms', $category_list, 'incsub_wiki_category', __( 'Category:', 'wiki' ) . ' <span class="incsub_wiki-category">', '', '</span> ' );
+					$taxonomy .= apply_filters('the_terms', $tags_list, 'incsub_wiki_tag', __( 'Tags:', 'wiki' ) . ' <span class="incsub_wiki-tags">', ' ', '</span> ' );
+				}
 				
-				$taxonomy .= apply_filters('the_terms', $category_list, 'incsub_wiki_category', __( 'Category:', 'wiki' ) . ' <span class="incsub_wiki-category">', '', '</span> ' );
-				$taxonomy .= apply_filters('the_terms', $tags_list, 'incsub_wiki_tag', __( 'Tags:', 'wiki' ) . ' <span class="incsub_wiki-tags">', ' ', '</span> ' );
-				
-				$children = get_posts(
-						array('post_parent' => $post->ID,
-								 'post_type' => 'incsub_wiki',
-								 'orderby' => $this->settings['sub_wiki_order_by'],
-								 'order' => $this->settings['sub_wiki_order'],
-								 'numberposts' => 100000));
+				$children = get_posts(array(
+					'post_parent' => $post->ID,
+					'post_type' => 'incsub_wiki',
+					'orderby' => $this->settings['sub_wiki_order_by'],
+					'order' => $this->settings['sub_wiki_order'],
+					'numberposts' => 100000
+				));
 				
 				$crumbs = array();
 				foreach($children as $child) {
@@ -1058,11 +1078,7 @@ class Wiki {
 		echo	'<input type="hidden" name="action" id="wiki_action" value="editpost" />';
 		echo	'<div><input type="hidden" name="post_title" id="wiki_title" value="'.ucwords(get_query_var('name')).'" class="incsub_wiki_title" size="30" /></div>';
 		echo	'<div>';
-		if (version_compare($wp_version, "3.3") >= 0) {
-			wp_editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content'));
-		} else {
-			echo '<textarea tabindex="2" name="content" id="wikicontent" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>';
-		}
+		wp_editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content'));
 		echo	'</div>';
 		echo	'<input type="hidden" name="_wpnonce" id="_wpnonce" value="'.wp_create_nonce("wiki-editpost_{$edit_post->ID}").'" />';
 		
@@ -1075,13 +1091,6 @@ class Wiki {
 		echo	'</div>';
 		echo	'</form>';
 		echo	'</div>';
-		
-		if (version_compare($wp_version, "3.3") < 0) {
-			require_once 'lib/classes/WikiAdmin.php';
-			
-			$wiki_admin = new WikiAdmin();
-			$wiki_admin->tiny_mce(true, array("editor_selector" => "incusb_wiki_tinymce"));
-		}
 		
 		echo '<style type="text/css">'.
 			'#comments { display: none; }'.
@@ -1149,25 +1158,18 @@ class Wiki {
 		$return .= '<div><input type="text" name="post_title" id="wiki_title" value="'.$edit_post->post_title.'" class="incsub_wiki_title" size="30" /></div>';
 		$return .= '<div>';
 		
-		if ( version_compare($wp_version, "3.3") >= 0 ) {
-			if ( @ob_start() ) {
-				// Output buffering is on, capture the output from wp_editor() and append it to the $return variable
-				wp_editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content'));
-				$return .= ob_get_clean();
-			} else {
-				/*
-				This is hacky, but without output buffering on we needed to make a copy of the built-in _WP_Editors class and
-				change the editor() method to return the output instead of echo it. The only bad thing about this is that we
-				also had to remove the media_buttons action so plugins/themes won't be able to tie into it
-				*/
-				require_once $this->plugin_dir . 'lib/classes/WPEditor.php';
-				$return .= WikiEditor::editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content'));
-			}
-		} else {		
-			$return .= '<textarea tabindex="2" name="content" id="wikicontent" class="incusb_wiki_tinymce" cols="40" rows="10" >'.$edit_post->post_content.'</textarea>';
-			require_once $this->plugin_dir . 'lib/classes/WikiAdmin.php';
-			$wiki_admin = new WikiAdmin();
-			$wiki_admin->tiny_mce(true, array("editor_selector" => "incusb_wiki_tinymce"));
+		if ( @ob_start() ) {
+			// Output buffering is on, capture the output from wp_editor() and append it to the $return variable
+			wp_editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content'));
+			$return .= ob_get_clean();
+		} else {
+			/*
+			This is hacky, but without output buffering on we needed to make a copy of the built-in _WP_Editors class and
+			change the editor() method to return the output instead of echo it. The only bad thing about this is that we
+			also had to remove the media_buttons action so plugins/themes won't be able to tie into it
+			*/
+			require_once $this->plugin_dir . 'lib/classes/WPEditor.php';
+			$return .= WikiEditor::editor($edit_post->post_content, 'wikicontent', array('textarea_name' => 'content'));
 		}
 		
 		$return .= '</div>';
@@ -1199,14 +1201,18 @@ class Wiki {
 		global $post;
 		
 		$content	= '';
-		$content .= ( $frontend ) ? '<h3 class="incsub_wiki_header">' . __('Wiki Categories/Tags', 'wiki') . '</h3>' : '';
-		$content .= '<div class="incsub_wiki_meta_box">'.$this->wiki_taxonomies(false).'</div>';
-		$content .= ( $frontend ) ? '<h3 class="incsub_wiki_header">' . __('Wiki Notifications', 'wiki') . '</h3>' : '';
-		$content .= '<div class="incsub_wiki_meta_box">'.$this->notifications_meta_box($post, false).'</div>';
 		
-		if (current_user_can('edit_wiki_privileges')) {
+		if ( class_exists('Wiki_Premium') ) {
+			$content .= ( $frontend ) ? '<h3 class="incsub_wiki_header">' . __('Wiki Categories/Tags', 'wiki') . '</h3>' : '';		
+			$content .= '<div class="incsub_wiki_meta_box">'. Wiki_Premium::get_instance()->wiki_taxonomies(false) . '</div>';
+		}
+		
+		$content .= ( $frontend ) ? '<h3 class="incsub_wiki_header">' . __('Wiki Notifications', 'wiki') . '</h3>' : '';
+		$content .= '<div class="incsub_wiki_meta_box">' . $this->notifications_meta_box($post, false) . '</div>';
+		
+		if ( current_user_can('edit_wiki_privileges') && class_exists('Wiki_Premium') ) {
 			$content .= ( $frontend ) ? '<h3 class="incsub_wiki_header">' . __('Wiki Privileges', 'wiki') . '</h3>' : '';
-			$content .= '<div class="incsub_wiki_meta_box">'.$this->privileges_meta_box($post, false).'</div>';
+			$content .= '<div class="incsub_wiki_meta_box">' . Wiki_Premium::get_instance()->privileges_meta_box($post, false) . '</div>';
 		}
 		
 		return $content;
@@ -1629,7 +1635,11 @@ class Wiki {
 		else
 			load_plugin_textdomain('wiki', false, dirname(plugin_basename(__FILE__)).'/languages');
 		
-		$this->register_taxonomies();	// taxonomies MUST be registered before custom post types
+		if ( class_exists('Wiki_Premium') ) {
+			// taxonomies MUST be registered before custom post types
+			Wiki_Premium::get_instance()->register_taxonomies();
+		}
+		
 		$this->register_post_types();
 		
 		if (isset($_REQUEST['action'])) {
@@ -1755,79 +1765,18 @@ class Wiki {
 		);
 	}
 
-	/**
-	 * Registers plugin taxonomies
-	 * @since 1.2.4
-	 */
-	function register_taxonomies() {
-		$slug = $this->settings['slug'] . '/' . $this->slug_categories;
-		register_taxonomy('incsub_wiki_category', 'incsub_wiki', array(
-			'hierarchical' => true,
-			'rewrite' => array(
-				'slug' => $slug,
-				'with_front' => false
-			),
-			'capabilities' => array(
-				'manage_terms' => 'edit_others_wikis',
-				'edit_terms' => 'edit_others_wikis',
-				'delete_terms' => 'edit_others_wikis',
-				'assign_terms' => 'edit_published_wikis'
-			),
-			'labels' => array(
-				'name' => __( 'Wiki Categories', 'wiki' ),
-				'singular_name' => __( 'Wiki Category', 'wiki' ),
-				'search_items' => __( 'Search Wiki Categories', 'wiki' ),
-				'all_items' => __( 'All Wiki Categories', 'wiki' ),
-				'parent_item' => __( 'Parent Wiki Category', 'wiki' ),
-				'parent_item_colon' => __( 'Parent Wiki Category:', 'wiki' ),
-				'edit_item' => __( 'Edit Wiki Category', 'wiki' ),
-				'update_item' => __( 'Update Wiki Category', 'wiki' ),
-				'add_new_item' => __( 'Add New Wiki Category', 'wiki' ),
-				'new_item_name' => __( 'New Wiki Category Name', 'wiki' ),
-			),
-			'show_admin_column' => true,
-		));
-
-		$slug = $this->settings['slug'] . '/' . $this->slug_tags;
-		register_taxonomy('incsub_wiki_tag', 'incsub_wiki', array(
-			'rewrite' => array(
-				'slug' => $slug,
-				'with_front' => false
-			),
-			'capabilities' => array(
-				'manage_terms' => 'edit_others_wikis',
-				'edit_terms' => 'edit_others_wikis',
-				'delete_terms' => 'edit_others_wikis',
-				'assign_terms' => 'edit_published_wikis'
-			),
-			'labels' => array(
-				'name'			=> __( 'Wiki Tags', 'wiki' ),
-				'singular_name'	=> __( 'Wiki Tag', 'wiki' ),
-				'search_items'	=> __( 'Search Wiki Tags', 'wiki' ),
-				'popular_items'	=> __( 'Popular Wiki Tags', 'wiki' ),
-				'all_items'		=> __( 'All Wiki Tags', 'wiki' ),
-				'edit_item'		=> __( 'Edit Wiki Tag', 'wiki' ),
-				'update_item'	=> __( 'Update Wiki Tag', 'wiki' ),
-				'add_new_item'	=> __( 'Add New Wiki Tag', 'wiki' ),
-				'new_item_name'	=> __( 'New Wiki Tag Name', 'wiki' ),
-				'separate_items_with_commas'	=> __( 'Separate wiki tags with commas', 'wiki' ),
-				'add_or_remove_items'			=> __( 'Add or remove wiki tags', 'wiki' ),
-				'choose_from_most_used'			=> __( 'Choose from the most used wiki tags', 'wiki' ),
-			),
-			'show_admin_column' => true,
-		));
-	}
-
 	function wp_enqueue_scripts() {
-		wp_register_script('incsub_wiki_js', plugins_url('wiki/js/wiki-utils.js'), null, $this->version);
-		wp_register_style('incsub_wiki-css', plugins_url('wiki/css/style.css'), null, $this->version);
-		wp_register_style('incsub_wiki-print-css', plugins_url('wiki/css/print.css'), null, $this->version, 'print');
+		if ( get_query_var('post_type') != 'incsub_wiki' ) { return; }
 		
-		if (get_query_var('post_type') == 'incsub_wiki') {
-			wp_enqueue_script('utils');
-			wp_enqueue_style('incsub_wiki-css');
-			wp_enqueue_style('incsub_wiki-print-css');
-		}
+		wp_enqueue_script('utils');
+		wp_enqueue_script('jquery');
+		wp_enqueue_script('incsub_wiki-js', $this->plugin_url . 'js/wiki.js', array('jquery'), $this->version);
+		wp_enqueue_style('incsub_wiki-css', $this->plugin_url . 'css/style.css', null, $this->version);
+		wp_enqueue_style('incsub_wiki-print-css', $this->plugin_url . 'css/print.css', null, $this->version, 'print');
+		
+		wp_localize_script('incsub_wiki-js', 'Wiki', array(
+			'restoreMessage' => __('Are you sure you want to restore to this revision?', 'wiki'),
+		));
 	}
 		
 	function is_subscribed() {
@@ -1846,7 +1795,6 @@ class Wiki {
 		global $post, $current_user;
 		
 		if ($post->post_author == $current_user->ID || current_user_can('edit_posts')) {
-			add_meta_box('incsub-wiki-privileges', __('Wiki Privileges', 'wiki'), array(&$this, 'privileges_meta_box'), 'incsub_wiki', 'side');
 			add_meta_box('incsub-wiki-notifications', __('Wiki E-mail Notifications', 'wiki'), array(&$this, 'notifications_meta_box'), 'incsub_wiki', 'side');
 		}
 	}
@@ -1884,27 +1832,7 @@ class Wiki {
 		
 		return $permalink;
 	}
-	
-	function term_link($termlink, $term, $taxonomy) {
-		$rewritecode = array(
-			'%incsub_wiki_category%',
-			'%incsub_wiki_tag%'
-		);
-		
-		if (preg_match('/^incsub_wiki_/', $term->taxonomy) > 0 && '' != $termlink) {
 			
-			$rewritereplace = array(
-				($term->slug == "")?(isset($term->term_id)?$term->term_id:0):$term->slug,
-				($term->slug == "")?(isset($term->term_id)?$term->term_id:0):$term->slug
-			);
-			$termlink = str_replace($rewritecode, $rewritereplace, $termlink);
-		} else {
-			// if they're not using the fancy permalink option
-		}
-		
-		return $termlink;
-		}
-		
 	function name_save($post_name) {
 		if ($_POST['post_type'] == 'incsub_wiki' && empty($post_name)) {
 			$post_name = $_POST['post_title'];
@@ -1912,72 +1840,7 @@ class Wiki {
 		
 		return $post_name;
 	}
-		
-	function privileges_meta_box( $post, $echo = true ) {
-		$settings = get_option('wiki_settings');
-		$content	= '';
-		$current_privileges = (array) get_post_meta($post->ID, 'incsub_wiki_privileges', true);
-		$privileges = array(
-			'anyone' => __('Anyone', 'wiki'),
-			'network' => __('Network users', 'wiki'),
-			'site' => __('Site users', 'wiki'),
-			'edit_posts' => __('Users who can edit posts in this site', 'wiki')
-			);
-		
-		$content .= '<input type="hidden" name="incsub_wiki_privileges_meta" value="1" />';
-		$content .= '<div class="alignleft">';
-		$content .= '<b>'. __('Allow editing by', 'wiki').'</b><br/>';
-		foreach ($privileges as $key => $privilege) {
-			$content .= '<label class="incsub_wiki_label_roles"><input type="checkbox" name="incsub_wiki_privileges[]" value="'.$key.'" '.((in_array($key, $current_privileges))?'checked="checked"':'').' /> '.$privilege.'</label><br class="incsub_wiki_br_roles"/>';
-		}
-		$content .= '</div>';
-		$content .= '<div class="clear"></div>';
-		
-		if ($echo) {
-			echo $content;
-		}
-		return $content;
-	}
-	
-	function wiki_taxonomies($echo = true) {
-		global $post, $edit_post;
-		
-		$wiki = isset($post)?$post:$edit_post;
-		$wiki_tags = wp_get_object_terms( $wiki->ID, 'incsub_wiki_tag', array( 'fields' => 'names' ) );
-
-		$wiki_cats = wp_get_object_terms( $wiki->ID, 'incsub_wiki_category', array( 'fields' => 'ids' ) );
-		$wiki_cat = empty( $wiki_cats ) ? false : reset( $wiki_cats );
-		
-		$content	= '';
-		$content .= '<table id="wiki-taxonomies">';
-		$content .= '<tr>';
-		$content .= '<td id="wiki-category-td">';
-		$content .= wp_dropdown_categories( array(
-						'orderby' => 'name',
-						'order' => 'ASC',
-						'taxonomy' => 'incsub_wiki_category',
-						'selected' => $wiki_cat,
-						'hide_empty' => false,
-						'hierarchical' => true,
-						'name' => 'incsub_wiki_category',
-						'class' => '',
-						'echo' => false,
-						'show_option_none' => __( 'Select category...', 'wiki')
-					) );
-		$content .= '</td>';
-		$content .= '<td id="wiki-tags-label">';
-		$content .= '<label for="wiki-tags">'.__('Tags:', 'wiki').'</label>';
-		$content .= '</td>';
-		$content .= '<td id="wiki-tags-td">';
-		$content .= '<input type="text" id="incsub_wiki-tags" name="incsub_wiki_tags" value="'. implode( ', ', $wiki_tags ).'" />';
-		$content .= '</td></tr></table>';
-		
-		if ($echo) {
-			echo $content;
-		}
-		return $content;
-	}
-		
+					
 	function notifications_meta_box( $post, $echo = true ) {
 		$settings = get_option('incsub_wiki_settings');
 		$email_notify = get_post_meta($post->ID, 'incsub_wiki_email_notification', true);
@@ -2002,34 +1865,7 @@ class Wiki {
 		//skip quick edit
 		if ( defined('DOING_AJAX') )
 			return;
-		
-		if ( $post->post_type == "incsub_wiki" && isset( $_POST['incsub_wiki_tags'] ) ) {
-			$wiki_tags = $_POST['incsub_wiki_tags'];
-			
-			wp_set_post_terms( $post_id, $wiki_tags, 'incsub_wiki_tag' );
-			
-			//for any other plugin to hook into
-			do_action( 'incsub_wiki_save_taxonomy_tags', $post_id, $wiki_tags );
-		}
-		
-		if ( $post->post_type == "incsub_wiki" && isset( $_POST['incsub_wiki_tags'] ) ) {
-			$wiki_category = array( (int) $_POST['incsub_wiki_category'] );
-			
-			wp_set_post_terms( $post_id, $wiki_category, 'incsub_wiki_category' );
-			
-			//for any other plugin to hook into
-			do_action( 'incsub_wiki_save_taxonomy_category', $post_id, $wiki_category );
-		}
-			
-		if ( $post->post_type == "incsub_wiki" && isset( $_POST['incsub_wiki_privileges'] ) ) {
-			$meta = get_post_custom($post_id);
-			
-			update_post_meta($post_id, 'incsub_wiki_privileges', $_POST['incsub_wiki_privileges']);
-			
-			//for any other plugin to hook into
-			do_action( 'incsub_wiki_save_privileges_meta', $post_id, $meta );
-		}
-		
+				
 		if ( $post->post_type == "incsub_wiki" && isset( $_POST['incsub_wiki_notifications_meta'] ) ) {
 			$meta = get_post_custom($post_id);
 			$email_notify = isset($_POST['incsub_wiki_email_notification']) ? $_POST['incsub_wiki_email_notification'] : 0;
@@ -2043,22 +1879,9 @@ class Wiki {
 		
 	function widgets_init() {
 		include_once 'lib/classes/WikiWidget.php';
-		include_once 'lib/classes/SearchWikisWidget.php';
-		include_once 'lib/classes/NewWikisWidget.php';
-		include_once 'lib/classes/PopularWikisWidget.php';
-		include_once 'lib/classes/WikiCategoriesWidget.php';
-		include_once 'lib/classes/WikiTagsWidget.php';
-		include_once 'lib/classes/WikiTagCloudWidget.php';
-		
 		register_widget('WikiWidget');
-		register_widget('SearchWikisWidget');
-		register_widget('NewWikisWidget');
-		register_widget('PopularWikisWidget');
-		register_widget('WikiCategoriesWidget');
-		register_widget('WikiTagsWidget');
-		register_widget('WikiTagCloudWidget');
 	}
-		
+	
 	function send_notifications($post_id) {
 		global $wpdb;
 		
@@ -2188,4 +2011,8 @@ Cancel subscription: CANCEL_URL";
 	}
 }
 
-$wiki = new Wiki();
+$wiki = Wiki::get_instance();
+
+if ( file_exists($wiki->plugin_dir . 'premium/wiki-premium.php') ) {
+	require_once $wiki->plugin_dir . 'premium/wiki-premium.php';
+}

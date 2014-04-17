@@ -33,49 +33,22 @@ class Wiki_Admin_Page_Settings {
 					<th><label for="incsub_wiki-slug"><?php _e('Wiki Slug', 'wiki'); ?></label> </th>
 					<td> /<input type="text" size="20" id="incsub_wiki-slug" name="wiki[slug]" value="<?php echo $wiki->get_setting('slug'); ?>" /></td>
 				</tr>
-				<tr valign="top">
-					<th><label for="incsub_wiki-breadcrumbs_in_title"><?php _e('Number of breadcrumbs to add to title', 'wiki'); ?></label> </th>
-					<td><input type="text" size="2" id="incsub_wiki-breadcrumbs_in_title" name="wiki[breadcrumbs_in_title]" value="<?php echo $wiki->get_setting('breadcrumbs_in_title'); ?>" /></td>
-				</tr>
-				<tr valign="top">
-					<th><label for="incsub_wiki-wiki_name"><?php _e('What do you want to call Wikis?', 'wiki'); ?></label> </th>
-					<td><input type="text" size="20" id="incsub_wiki-wiki_name" name="wiki[wiki_name]" value="<?php echo $wiki->get_setting('wiki_name'); ?>" /></td>
-				</tr>
-				<tr valign="top">
-					<th><label for="incsub_wiki-sub_wiki_name"><?php _e('What do you want to call Sub Wikis?', 'wiki'); ?></label> </th>
-					<td><input type="text" size="20" id="incsub_wiki-sub_wiki_name" name="wiki[sub_wiki_name]" value="<?php echo $wiki->get_setting('sub_wiki_name'); ?>" /></td>
-				</tr>
-				<tr valign="top">
-					<th><label for="incsub_wiki-sub_wiki_order_by"><?php _e('How should Sub Wikis be ordered?', 'wiki'); ?></label> </th>
-					<td><select id="incsub_wiki-sub_wiki_order_by" name="wiki[sub_wiki_order_by]" >
-						<option value="menu_order" <?php selected($wiki->get_setting('sub_wiki_order_by', 'menu_order')); ?>><?php _e('Menu Order/Order Created', 'wiki'); ?></option>
-						<option value="title" <?php selected($wiki->get_setting('sub_wiki_order_by', 'title')); ?>><?php _e('Title', 'wiki'); ?></option>
-						<option value="rand" <?php selected($wiki->get_setting('sub_wiki_order_by', 'rand')); ?>><?php _e('Random', 'wiki'); ?></option>
-							 </select></td>
-				</tr>
-				<tr valign="top">
-					<th><label for="incsub_wiki-sub_wiki_order"><?php _e('What order should Sub Wikis be ordered?', 'wiki'); ?></label> </th>
-					<td><select id="incsub_wiki-sub_wiki_order" name="wiki[sub_wiki_order]" >
-						<option value="ASC" <?php selected($wiki->get_setting('sub_wiki_order', 'ASC')); ?>><?php _e('Ascending', 'wiki'); ?></option>
-						<option value="DESC" <?php selected($wiki->get_setting('sub_wiki_order', 'DESC')); ?>><?php _e('Descending', 'wiki'); ?></option>
-							 </select></td>
-				</tr>
-				<tr valign="top">
-					<th><label><?php _e('Who can edit wiki privileges?', 'wiki'); ?></label> </th>
-					<td>
-						<?php
-						$editable_roles = get_editable_roles();
-						foreach ($editable_roles as $role_key => $role) {
-							$role_obj = get_role($role_key);
-							?>
-							<label><input type="checkbox" name="edit_wiki_privileges[<?php echo $role_key; ?>]" value="<?php echo $role_key; ?>" <?php echo $role_obj->has_cap('edit_wiki_privileges')?'checked="checked"':''; ?> /> <?php echo $role['name']; ?></label><br/>
-							<?php
-						}
-						?>
-					</td>
-				</tr>
+				
+				<?php
+				if ( class_exists('Wiki_Premium') ) {
+					Wiki_Premium::get_instance()->admin_page_settings();
+				} ?>
 			</table>
 			
+			<h3><?php _e('<a target="_blank" href="http://premium.wpmudev.org/project/e-commerce">Upgrade now</a> to access additional features!', 'wiki'); ?></h3>
+			<ul>
+				<li><?php _e('Specify the number of breadcrumbs to add to title', 'wiki'); ?></li>
+				<li><?php _e('Specify a custom name for Wikis', 'wiki'); ?></li>
+				<li><?php _e('Add sub wikis', 'wiki'); ?></li>
+				<li><?php _e('Specify how sub wikis should be ordered', 'wiki'); ?></li>
+				<li><?php _e('Allow users other than administrator to edit wikis', 'wiki'); ?></li>
+			</ul>
+
 			<p class="submit">
 			<input type="submit" class="button-primary" name="submit_settings" value="<?php _e('Save Changes', 'wiki') ?>" />
 			</p>
@@ -95,11 +68,7 @@ class Wiki_Admin_Page_Settings {
 				update_option('wiki_flush_rewrites', 1);
 		
 			$wiki->settings['slug'] = $new_slug;
-			$wiki->settings['breadcrumbs_in_title'] = intval($_POST['wiki']['breadcrumbs_in_title']);
-			$wiki->settings['wiki_name'] = $_POST['wiki']['wiki_name'];
-			$wiki->settings['sub_wiki_name'] = $_POST['wiki']['sub_wiki_name'];
-			$wiki->settings['sub_wiki_order_by'] = $_POST['wiki']['sub_wiki_order_by'];
-			$wiki->settings['sub_wiki_order'] = $_POST['wiki']['sub_wiki_order'];
+			$wiki->settings = apply_filters('wiki_save_settings', $wiki->settings, $_POST['wiki']);
 			update_option('wiki_settings', $wiki->settings);
 			
 			if ( !function_exists('get_editable_roles') )
