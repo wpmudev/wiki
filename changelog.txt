@@ -5,10 +5,11 @@ Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
 
-1.2.5 - 04/17/2014 - Jonathan Cowher
+1.2.5
 ----------------------------------------------------------------------
 - Fixed: Better usability when restoring from front-end
 - Fixed: Front-end editor styles for WP 3.9
+- Refactored install sequence as would fail on large multisite setups
 - Removed: legacy editor code for WP versions < 3.3
 
 1.2.4.6 - 02/18/2014 - Jonathan Cowher

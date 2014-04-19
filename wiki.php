@@ -1509,24 +1509,14 @@ class Wiki {
 	}
 		
 	/**
-	 * Activation hook
-	 * 
-	 * Create tables if they don't exist and add plugin options
-	 * 
-	 * @see		http://codex.wordpress.org/Function_Reference/register_activation_hook
-	 * @param bool $network_activate Whether the plugin is being activated for the entire network 
+	 * Install
+	 *
 	 * @$uses	$wpdb
 	 */
-	function install( $network_activate ) {
+	function install() {
 		global $wpdb;
 		
-		// Move wiki_version option from blog table to sitemeta table
-		if ( $wiki_version = get_option('wiki_version') ) {
-			update_site_option('wiki_version', $wiki_version);
-			delete_option('wiki_version');
-		}
-		
-		if ( get_site_option('wiki_version', false) == $this->version )
+		if ( get_option('wiki_version', false) == $this->version )
 			return;
 		
 		// WordPress database upgrade/creation functions
@@ -1550,21 +1540,9 @@ class Wiki {
 				PRIMARY KEY  (ID)
 			) ENGINE=InnoDB $charset_collate;");
 
-		// Setup blog(s)
-		if ( $network_activate ) {
-			$results = $wpdb->get_results("
-				SELECT blog_id
-				FROM $wpdb->blogs
-			");
-			
-			foreach ( $results as $row ) {
-				$this->setup_blog($row->blog_id);
-			}
-		} else {
-			$this->setup_blog();
-		}
+		$this->setup_blog();
 							
-		update_site_option('wiki_version', $this->version);
+		update_option('wiki_version', $this->version);
 	}
 		
 	/**
@@ -1623,8 +1601,9 @@ class Wiki {
 	function init() {
 		global $wpdb, $wp_rewrite, $current_user, $blog_id, $wp_roles;
 		
+		$this->install();	//we run this here because activation hooks aren't triggered when updating - see http://wp.mu/8kv
+		
 		if ( is_admin() ) {
-			$this->install(is_multisite() ? true : false);	//we run this here because activation hooks aren't triggered when updating - see http://wp.mu/8kv
 			$this->init_admin_pages();
 		}
 		
