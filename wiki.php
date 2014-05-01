@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/wiki
 Description: Add a wiki to your blog
 Author: WPMU DEV
 WDP ID: 168
-Version: 1.2.5
+Version: 1.2.5.1
 Author URI: http://premium.wpmudev.org
 Text Domain: wiki
 */
@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 class Wiki {
 	// @var string Current version
-	var $version = '1.2.5';
+	var $version = '1.2.5.1';
 	// @var string The db prefix
 	var $db_prefix = '';
 	// @var string The plugin settings
@@ -1908,45 +1908,46 @@ class Wiki {
 		}
 		
 		$wiki_notification_content = array();
-		$wiki_notification_content['user'] = "Dear Subscriber,
+		$wiki_notification_content['user'] = sprintf(__("Dear Subscriber,
 
-POST_TITLE was changed
+%s was changed
 
-You can read the Wiki page in full here: POST_URL
+You can read the Wiki page in full here: %s
 
-EXCERPT
-
-Thanks,
-BLOGNAME
-
-Cancel subscription: CANCEL_URL";
-			 if ($revision) {
-			$wiki_notification_content['author'] = "Dear Author,
-
-POST_TITLE was changed
-
-You can read the Wiki page in full here: POST_URL
-You can revert the changes: REVERT_URL
-
-EXCERPT
+%s
 
 Thanks,
 BLOGNAME
 
-Cancel subscription: CANCEL_URL";
+Cancel subscription: CANCEL_URL", 'POST TITLE', 'wiki'), 'POST_URL', 'EXCERPT', 'BLOGNAME');
+
+		if ($revision) {
+			$wiki_notification_content['author'] = sprintf(__("Dear Author,
+
+%s was changed
+
+You can read the Wiki page in full here: %s
+You can revert the changes: %s
+
+%s
+
+Thanks,
+%s
+
+Cancel subscription: %s", 'wiki'), 'POST_TITLE', 'POST_URL', 'REVERT_URL', 'EXCERPT', 'BLOGNAME', 'CANCEL_URL');
 			 } else {
-			$wiki_notification_content['author'] = "Dear Author,
+			$wiki_notification_content['author'] = sprintf(__("Dear Author,
 
-POST_TITLE was changed
+%s was changed
 
-You can read the Wiki page in full here: POST_URL
+You can read the Wiki page in full here: %s
 
-EXCERPT
+%s
 
 Thanks,
-BLOGNAME
+%s
 
-Cancel subscription: CANCEL_URL";	
+Cancel subscription: %s", 'wiki'), 'POST_TITLE', 'POST_URL', 'EXCERPT', 'BLOGNAME', 'CANCEL_URL');
 			 }
 
 		//format notification text
