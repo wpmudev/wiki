@@ -5,14 +5,11 @@ Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
 
-1.2.5.1
-----------------------------------------------------------------------
-- Fixed: unabled to translate notification emails 
-
 1.2.5
 ----------------------------------------------------------------------
 - Fixed: Better usability when restoring from front-end
 - Fixed: Front-end editor styles for WP 3.9
+- Fixed: unabled to translate notification emails 
 - Refactored install sequence as would fail on large multisite setups
 - Removed: legacy editor code for WP versions < 3.3
 
