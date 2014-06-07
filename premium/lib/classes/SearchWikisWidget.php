@@ -22,7 +22,7 @@ class SearchWikisWidget extends WP_Widget {
 	<div><label class="screen-reader-text" for="s"><?php _e('Search for:'); ?></label>
 	<input type="text" value="<?php echo get_search_query(); ?>" name="s" id="s" />
 	<input type="hidden" value="incsub_wiki" name="post_type" id="post_type" />
-	<input type="submit" id="searchsubmit" value="<?php echo esc_attr__('Search'); ?>" />
+	<input type="submit" id="searchsubmit" value="<?php esc_attr_e('Search', 'wiki'); ?>" />
 	</div>
 	</form>
         <br />
