@@ -40,7 +40,9 @@ class Wiki_Admin_Page_Settings {
 				} ?>
 			</table>
 			
-			<h3><?php _e('<a target="_blank" href="http://premium.wpmudev.org/project/e-commerce">Upgrade now</a> to access additional features!', 'wiki'); ?></h3>
+			<?php
+			if ( ! class_exists('Wiki_Premium') ) : ?>
+			<h3><?php _e('<a target="_blank" href="http://premium.wpmudev.org/project/wordpess-wiki">Upgrade now</a> to access additional features!', 'wiki'); ?></h3>
 			<ul>
 				<li><?php _e('Specify the number of breadcrumbs to add to title', 'wiki'); ?></li>
 				<li><?php _e('Specify a custom name for Wikis', 'wiki'); ?></li>
@@ -48,6 +50,8 @@ class Wiki_Admin_Page_Settings {
 				<li><?php _e('Specify how sub wikis should be ordered', 'wiki'); ?></li>
 				<li><?php _e('Allow users other than administrator to edit wikis', 'wiki'); ?></li>
 			</ul>
+			<?php
+			endif; ?>
 
 			<p class="submit">
 			<input type="submit" class="button-primary" name="submit_settings" value="<?php _e('Save Changes', 'wiki') ?>" />

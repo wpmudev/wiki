@@ -5,6 +5,11 @@ Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
 
+1.2.5.1
+----------------------------------------------------------------------
+- Fixed: Upgrade now verbiage is showing on setting screen in premium version
+- Fixed: Some settings not saving http://wp.mu/a0r
+ 
 1.2.5
 ----------------------------------------------------------------------
 - Fixed: Better usability when restoring from front-end

@@ -121,18 +121,22 @@ class Wiki_Premium {
 </tr>
 <tr valign="top">
 	<th><label for="incsub_wiki-sub_wiki_order_by"><?php _e('How should Sub Wikis be ordered?', 'wiki'); ?></label> </th>
-	<td><select id="incsub_wiki-sub_wiki_order_by" name="wiki[sub_wiki_order_by]" >
-		<option value="menu_order" <?php selected($this->wiki->get_setting('sub_wiki_order_by', 'menu_order')); ?>><?php _e('Menu Order/Order Created', 'wiki'); ?></option>
-		<option value="title" <?php selected($this->wiki->get_setting('sub_wiki_order_by', 'title')); ?>><?php _e('Title', 'wiki'); ?></option>
-		<option value="rand" <?php selected($this->wiki->get_setting('sub_wiki_order_by', 'rand')); ?>><?php _e('Random', 'wiki'); ?></option>
-			 </select></td>
+	<td>
+		<select id="incsub_wiki-sub_wiki_order_by" name="wiki[sub_wiki_order_by]" >
+			<option value="menu_order" <?php selected($this->wiki->get_setting('sub_wiki_order_by'), 'menu_order'); ?>><?php _e('Menu Order/Order Created', 'wiki'); ?></option>
+			<option value="title" <?php selected($this->wiki->get_setting('sub_wiki_order_by'), 'title'); ?>><?php _e('Title', 'wiki'); ?></option>
+			<option value="rand" <?php selected($this->wiki->get_setting('sub_wiki_order_by'), 'rand'); ?>><?php _e('Random', 'wiki'); ?></option>
+		</select>
+	</td>
 </tr>
 <tr valign="top">
 	<th><label for="incsub_wiki-sub_wiki_order"><?php _e('What order should Sub Wikis be ordered?', 'wiki'); ?></label> </th>
-	<td><select id="incsub_wiki-sub_wiki_order" name="wiki[sub_wiki_order]" >
-		<option value="ASC" <?php selected($this->wiki->get_setting('sub_wiki_order', 'ASC')); ?>><?php _e('Ascending', 'wiki'); ?></option>
-		<option value="DESC" <?php selected($this->wiki->get_setting('sub_wiki_order', 'DESC')); ?>><?php _e('Descending', 'wiki'); ?></option>
-			 </select></td>
+	<td>
+		<select id="incsub_wiki-sub_wiki_order" name="wiki[sub_wiki_order]" >
+			<option value="ASC" <?php selected($this->wiki->get_setting('sub_wiki_order'), 'ASC'); ?>><?php _e('Ascending', 'wiki'); ?></option>
+			<option value="DESC" <?php selected($this->wiki->get_setting('sub_wiki_order'), 'DESC'); ?>><?php _e('Descending', 'wiki'); ?></option>
+		</select>
+	</td>
 </tr>
 <tr valign="top">
 	<th><label><?php _e('Who can edit wiki privileges?', 'wiki'); ?></label> </th>

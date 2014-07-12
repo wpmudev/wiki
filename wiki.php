@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/wiki
 Description: Add a wiki to your blog
 Author: WPMU DEV
 WDP ID: 168
-Version: 1.2.5
+Version: 1.2.5.1
 Author URI: http://premium.wpmudev.org
 Text Domain: wiki
 */
@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 class Wiki {
 	// @var string Current version
-	var $version = '1.2.5';
+	var $version = '1.2.5.1';
 	// @var string The db prefix
 	var $db_prefix = '';
 	// @var string The plugin settings
