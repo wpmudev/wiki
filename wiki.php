@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/wiki
 Description: Add a wiki to your blog
 Author: WPMU DEV
 WDP ID: 168
-Version: 1.2.5.1
+Version: 1.2.5.2
 Author URI: http://premium.wpmudev.org
 Text Domain: wiki
 */
@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 class Wiki {
 	// @var string Current version
-	var $version = '1.2.5.1';
+	var $version = '1.2.5.2';
 	// @var string The db prefix
 	var $db_prefix = '';
 	// @var string The plugin settings
@@ -92,6 +92,11 @@ class Wiki {
 		
 		add_action('add_meta_boxes_incsub_wiki', array(&$this, 'meta_boxes') );
 		add_action('wp_insert_post', array(&$this, 'save_wiki_meta'), 10, 2 );
+
+		add_filter('get_next_post_where', array(&$this, 'get_next_post_where'));
+		add_filter('get_previous_post_where', array(&$this, 'get_previous_post_where'));
+		add_filter('get_next_post_sort', array(&$this, 'get_next_post_sort'));
+		add_filter('get_previous_post_sort', array(&$this, 'get_previous_post_sort'));
 		
 		add_action('widgets_init', array(&$this, 'widgets_init'));
 		add_action('pre_post_update', array(&$this, 'send_notifications'), 50, 1);
@@ -1030,6 +1035,118 @@ class Wiki {
 		$lock = "$now:$user_id";
 		
 		update_post_meta( $post->ID, '_edit_lock', $lock );
+	}
+
+	/**
+	 * Alters the get_next_post_where clause so that the next post link returns the correct wiki
+	 *
+	 * @since 1.2.5.2
+	 * @access public
+	 * @filter get_next_post_where
+	 */
+	function get_next_post_where( $sql ) {
+		global $wpdb, $post;
+		
+		if ( ! is_main_query() || ! is_singular('incsub_wiki') ) {
+    	return $sql;
+    }
+		
+		switch ( $this->get_setting('sub_wiki_order_by') ) {
+			case 'menu_order' :
+				$sql  = $wpdb->prepare("WHERE p.menu_order " . (( $this->get_setting('sub_wiki_order') == 'ASC') ? '>' : '<') . " %d AND p.post_type = 'incsub_wiki' AND p.post_status = 'publish'", $post->menu_order);
+				$sql .= $wpdb->prepare(" AND p.post_parent = %d", $post->post_parent);
+				break;
+				
+			case 'title' :
+				$sql  = $wpdb->prepare("WHERE p.post_title " . (( $this->get_setting('sub_wiki_order') == 'ASC') ? '>' : '<') . " %s AND p.post_type = 'incsub_wiki' AND p.post_status = 'publish'", $post->post_title);
+				$sql .= $wpdb->prepare(" AND p.post_parent = %d", $post->post_parent);
+				break;				
+		}
+		
+		return $sql;
+	}
+
+	/**
+	 * Alters the get_previous_post_where clause so that the previous post link returns the correct wiki
+	 *
+	 * @since 1.2.5.2
+	 * @access public
+	 * @filter get_previous_post_where
+	 */	
+	function get_previous_post_where( $sql ) {
+		global $wpdb, $post;
+		
+		if ( ! is_main_query() || ! is_singular('incsub_wiki') ) {
+    	return $sql;
+    }
+    
+		switch ( $this->get_setting('sub_wiki_order_by') ) {
+			case 'menu_order' :
+				$sql  = $wpdb->prepare("WHERE p.menu_order " . (( $this->get_setting('sub_wiki_order') == 'ASC') ? '<' : '>') . " %d AND p.post_type = 'incsub_wiki' AND p.post_status = 'publish'", $post->menu_order);
+				$sql .= $wpdb->prepare(" AND p.post_parent = %d", $post->post_parent);
+				break;
+				
+			case 'title' :
+				$sql  = $wpdb->prepare("WHERE p.post_title " . (( $this->get_setting('sub_wiki_order') == 'ASC') ? '<' : '>') . " %s AND p.post_type = 'incsub_wiki' AND p.post_status = 'publish'", $post->post_title);
+				$sql .= $wpdb->prepare(" AND p.post_parent = %d", $post->post_parent);
+				break;				
+		}
+		
+		return $sql;
+	}
+
+	/**
+	 * Alters the get_next_post_sort clause so that the next post link returns the correct wiki
+	 *
+	 * @since 1.2.5.2
+	 * @access public
+	 * @filter get_next_post_sort
+	 */		
+	function get_next_post_sort( $sql ) {
+		global $wpdb, $post;
+
+		if ( ! is_main_query() || ! is_singular('incsub_wiki') ) {
+    	return $sql;
+    }
+    
+		switch ( $this->get_setting('sub_wiki_order_by') ) {
+			case 'menu_order' :
+				$sql = 'ORDER BY p.menu_order ' . (( $this->get_setting('sub_wiki_order') == 'ASC') ? 'ASC' : 'DESC') . ' LIMIT 1';
+				break;
+				
+			case 'title' :
+				$sql = 'ORDER BY p.post_title ' . (( $this->get_setting('sub_wiki_order') == 'ASC') ? 'ASC' : 'DESC') . ' LIMIT 1';
+				break;
+		}
+		
+		return $sql;
+	}
+
+	/**
+	 * Alters the get_previous_post_sort clause so that the previous post link returns the correct wiki
+	 *
+	 * @since 1.2.5.2
+	 * @access public
+	 * @filter get_previous_post_sort
+	 */			
+	function get_previous_post_sort( $sql ) {
+		global $wpdb, $post;
+
+		if ( ! is_main_query() || ! is_singular('incsub_wiki') ) {
+    	return $sql;
+    }
+    
+		switch ( $this->get_setting('sub_wiki_order_by') ) {
+			case 'menu_order' :
+				$sql = 'ORDER BY p.menu_order ' . (( $this->get_setting('sub_wiki_order') == 'ASC') ? 'DESC' : 'ASC') . ' LIMIT 1';
+				break;
+			
+			case 'title' :
+				$sql = 'ORDER BY p.post_title ' . (( $this->get_setting('sub_wiki_order') == 'ASC') ? 'DESC' : 'ASC') . ' LIMIT 1';
+				break;
+		}
+		
+		return $sql;
 	}
 		
 	/**
