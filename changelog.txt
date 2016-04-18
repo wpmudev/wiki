@@ -8,6 +8,7 @@ Change Log:
 1.2.6
 
 - Fixed: Warning and Notices
+- Fixed: Show separator between multiple categories and tags
 - Update: Do not insert duplicate email for wiki notification changes
 
 
