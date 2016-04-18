@@ -1873,12 +1873,28 @@ class Wiki {
 		}
 
 		if ( isset( $_REQUEST['subscribe'] ) && wp_verify_nonce( $_REQUEST['_wpnonce'], "wiki-subscribe-wiki_{$_REQUEST['post_id']}" ) ) {
-			if ( isset( $_REQUEST['email'] ) ) {
-				if ( $wpdb->insert( "{$this->db_prefix}wiki_subscriptions",
+
+			//Sanitize Wiki ID
+			$wiki_id = ! empty( $_REQUEST['post_id'] ) ? absint( stripslashes( $_REQUEST['post_id'] ) ) : '';
+			$email   = ! empty( $_REQUEST['email'] ) && is_email( $_REQUEST['email'] ) ? stripslashes( $_REQUEST['email'] ) : '';
+
+			//Check if email and Wiki id are set, else early exit;
+			if ( empty( $wiki_id ) ) {
+				return false;
+			}
+
+			if ( ! empty( $email ) ) {
+				//Check if Blog Id, Wiki ID , Email combination is already in db
+				$query = "SELECT * FROM {$this->db_prefix}wiki_subscriptions WHERE blog_id = %d AND wiki_id = %d AND email = %s LIMIT 1";
+				if ( $row = $wpdb->get_row( $wpdb->prepare( $query, $blog_id, $wiki_id, $email ) ) ) {
+					return false;
+				}
+
+				if ( $inserted = $wpdb->insert( "{$this->db_prefix}wiki_subscriptions",
 					array(
 						'blog_id' => $blog_id,
-						'wiki_id' => $_REQUEST['post_id'],
-						'email'   => $_REQUEST['email']
+						'wiki_id' => absint( $_REQUEST['post_id'] ),
+						'email'   => stripslashes( $_REQUEST['email'] )
 					) )
 				) {
 					setcookie( 'incsub_wiki_email', $_REQUEST['email'], time() + 3600 * 24 * 365, '/' );
@@ -1886,9 +1902,15 @@ class Wiki {
 					exit();
 				}
 			} elseif ( is_user_logged_in() ) {
+				//Check if Blog Id, Wiki ID , User id combination is already in db
+				$query = "SELECT * FROM {$this->db_prefix}wiki_subscriptions WHERE blog_id = %d AND wiki_id = %d AND user_id = %d LIMIT 1";
+				if ( $row = $wpdb->get_row( $wpdb->prepare( $query, $blog_id, $wiki_id, $current_user->ID ) ) ) {
+					return false;
+				}
+
 				$result = $wpdb->insert( "{$this->db_prefix}wiki_subscriptions", array(
 					'blog_id' => $blog_id,
-					'wiki_id' => $_REQUEST['post_id'],
+					'wiki_id' => $wiki_id,
 					'user_id' => $current_user->ID
 				) );
 
@@ -1897,12 +1919,12 @@ class Wiki {
 					exit();
 				}
 			}
-		}
 
-		if ( isset( $_GET['action'] ) && $_GET['action'] == 'cancel-wiki-subscription' ) {
-			if ( $wpdb->query( "DELETE FROM {$this->db_prefix}wiki_subscriptions WHERE ID = " . intval( $_GET['sid'] ) . ";" ) ) {
-				wp_redirect( get_option( 'siteurl' ) );
-				exit();
+			if ( isset( $_GET['action'] ) && $_GET['action'] == 'cancel-wiki-subscription' ) {
+				if ( $wpdb->query( "DELETE FROM {$this->db_prefix}wiki_subscriptions WHERE ID = " . intval( $_GET['sid'] ) . ";" ) ) {
+					wp_redirect( get_option( 'siteurl' ) );
+					exit();
+				}
 			}
 		}
 	}
@@ -2132,11 +2154,6 @@ class Wiki {
 			return;
 		}
 
-		// all revisions and (possibly) one autosave
-		$revisions = wp_get_post_revisions( $post_id, array( 'order' => 'ASC' ) );
-
-		$revision = array_pop( $revisions );
-
 		$post = get_post( $post_id );
 
 		$cancel_url   = get_option( 'siteurl' ) . '?action=cancel-wiki-subscription&sid=';
@@ -2220,30 +2237,31 @@ Cancel subscription: %s", 'wiki' ), 'POST_TITLE', 'POST_URL', 'EXCERPT', 'BLOGNA
 
 		global $blog_id;
 
+		//Get all the Subscriptions
 		$query               = "SELECT * FROM " . $this->db_prefix . "wiki_subscriptions WHERE blog_id = {$blog_id} AND wiki_id = {$post->ID}";
-		$subscription_emails = $wpdb->get_results( $query, ARRAY_A );
+		$subs = $wpdb->get_results( $query, ARRAY_A );
 
-		if ( count( $subscription_emails ) > 0 ) {
-			foreach ( $subscription_emails as $subscription_email ) {
+		//If the number of subscriptions are greater than 0
+		if ( count( $subs ) > 0 ) {
+			foreach ( $subs as $sub ) {
 				$loop_notification_content = $wiki_notification_content['user'];
 
-				$loop_notification_content = $wiki_notification_content['user'];
-
-				if ( $subscription_email['user_id'] > 0 ) {
-					if ( $subscription_email['user_id'] == $post->post_author ) {
+				//If we have user id for the subscriber, Get the email
+				if ( $sub['user_id'] > 0 ) {
+					if ( $sub['user_id'] == $post->post_author ) {
 						$loop_notification_content = $wiki_notification_content['author'];
 					}
-					$user            = get_userdata( $subscription_email['user_id'] );
-					$subscription_to = $user->user_email;
+					$user      = get_userdata( $sub['user_id'] );
+					$notify_to = $user->user_email;
 				} else {
-					$subscription_to = $subscription_email['email'];
+					$notify_to = $sub['email'];
 				}
 
-				$loop_notification_content = str_replace( "CANCEL_URL", $cancel_url . $subscription_email['ID'], $loop_notification_content );
+				$loop_notification_content = str_replace( "CANCEL_URL", $cancel_url . $sub['ID'], $loop_notification_content );
 				$subject_content           = $blog_name . ': ' . __( 'Wiki Page Changes', 'wiki' );
 				$from_email                = $admin_email;
 				$message_headers           = "MIME-Version: 1.0\n" . "From: " . $blog_name . " <{$from_email}>\n" . "Content-Type: text/plain; charset=\"" . get_option( 'blog_charset' ) . "\"\n";
-				wp_mail( $subscription_to, $subject_content, $loop_notification_content, $message_headers );
+				wp_mail( $notify_to, $subject_content, $loop_notification_content, $message_headers );
 			}
 		}
 	}

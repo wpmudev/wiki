@@ -5,6 +5,12 @@ Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
 
+1.2.6
+
+- Fixed: Warning and Notices
+- Update: Do not insert duplicate email for wiki notification changes
+
+
 1.2.5.2
 ----------------------------------------------------------------------
 - Fixed: Prev/next links don't show correct posts based upon Wiki settings
