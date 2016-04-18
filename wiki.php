@@ -220,7 +220,7 @@ class Wiki {
 			return $path;
 		
 		$post_type_object = get_post_type_object( get_query_var('post_type') );
-		
+
 		if (current_user_can($post_type_object->cap->publish_posts)) {
 			$type = reset( explode( '_', current_filter() ) );
 			$file = basename( $path );
@@ -238,7 +238,6 @@ class Wiki {
 		
 	function load_templates( $template ) {
 		global $wp_query, $post;
-		
 		if ( is_single() && 'incsub_wiki' == get_post_type() ) {
 			//check for custom theme templates
 			$wiki_name = $post->post_name;
