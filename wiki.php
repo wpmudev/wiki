@@ -2275,6 +2275,7 @@ Cancel subscription: %s", 'wiki' ), 'POST_TITLE', 'POST_URL', 'EXCERPT', 'BLOGNA
 	}
 }
 
+global $wiki;
 $wiki = Wiki::get_instance();
 
 if ( file_exists( $wiki->plugin_dir . 'premium/wiki-premium.php' ) ) {
