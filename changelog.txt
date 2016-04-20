@@ -10,6 +10,7 @@ Change Log:
 - Fixed: Warning and Notices
 - Fixed: Show separator between multiple categories and tags
 - Fixed: Fatal error when running cron using wp-cli
+- Fixed: Do not show auto save for the post in front-end
 - Update: Do not insert duplicate email for wiki notification changes
 
 

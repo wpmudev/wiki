@@ -1543,15 +1543,9 @@ class Wiki {
 		}
 
 		$content  = '';
-		$defaults = array( 'parent' => false, 'right' => false, 'left' => false, 'format' => 'list', 'type' => 'all' );
+		$defaults = array( 'parent' => false, 'right' => false, 'left' => false, 'format' => 'list', 'type' => 'revision' );
 		extract( wp_parse_args( $args, $defaults ), EXTR_SKIP );
 		switch ( $type ) {
-			case 'autosave' :
-				if ( ! $autosave = wp_get_post_autosave( $post->ID ) ) {
-					return;
-				}
-				$revisions = array( $autosave );
-				break;
 			case 'revision' : // just revisions - remove autosave later
 			case 'all' :
 			default :
@@ -1571,6 +1565,7 @@ class Wiki {
 		$rows          = '';
 		$class         = false;
 		$can_edit_post = current_user_can( 'edit_wiki', $post->ID );
+
 		foreach ( $revisions as $revision ) {
 			/*if ( !current_user_can( 'read_post', $revision->ID ) )
 			continue;*/
