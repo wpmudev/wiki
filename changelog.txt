@@ -1,4 +1,4 @@
-Plugin Name: Wiki
+Plugin Name: Wiki Pro
 Author: S H Mohanjith (Incsub)
 
 Change Log:

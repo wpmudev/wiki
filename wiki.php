@@ -1,11 +1,11 @@
 <?php
 /*
-Plugin Name: Wiki
+Plugin Name: Wiki Pro
 Plugin URI: http://premium.wpmudev.org/project/wiki
 Description: Add a wiki to your blog
 Author: WPMU DEV
 WDP ID: 168
-Version: 1.2.5.2
+Version: 1.2.6
 Author URI: http://premium.wpmudev.org
 Text Domain: wiki
 */
@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 class Wiki {
 	// @var string Current version
-	var $version = '1.2.5.2';
+	var $version = '1.2.6-alpha1';
 	// @var string The db prefix
 	var $db_prefix = '';
 	// @var string The plugin settings
