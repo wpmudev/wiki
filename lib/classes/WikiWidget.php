@@ -51,7 +51,8 @@ class WikiWidget extends WP_Widget {
 			foreach ( $wiki_posts as $wiki ) {
 				?>
 				<li>
-					<a href="<?php print get_permalink( $wiki->ID ); ?>" class="<?php print ( $wiki->ID == $post->ID ) ? 'current' : ''; ?>"><?php print $wiki->post_title; ?></a>
+					<a href="<?php print get_permalink( $wiki->ID ); ?>"
+					   class="<?php print ( $wiki->ID == $post->ID ) ? 'current' : ''; ?>"><?php print $wiki->post_title; ?></a>
 					<?php ( $hierarchical == 0 || $hierarchical > 1 ) ? $this->_print_sub_wikis( $wiki, $order_by, $order, $hierarchical, 2 ) : ''; ?>
 				</li>
 				<?php
@@ -80,7 +81,8 @@ class WikiWidget extends WP_Widget {
 			foreach ( $sub_wikis as $sub_wiki ) {
 				?>
 				<li>
-					<a href="<?php print get_permalink( $sub_wiki->ID ); ?>" class="<?php print ( $sub_wiki->ID == $post->ID ) ? 'current' : ''; ?>"><?php print $sub_wiki->post_title; ?></a>
+					<a href="<?php print get_permalink( $sub_wiki->ID ); ?>"
+					   class="<?php print ( $sub_wiki->ID == $post->ID ) ? 'current' : ''; ?>"><?php print $sub_wiki->post_title; ?></a>
 					<?php ( $level == 0 || $level > $current_level ) ? $this->_print_sub_wikis( $sub_wiki, $order_by, $order, $level, $current_level + 1 ) : ''; ?>
 				</li>
 				<?php
@@ -111,15 +113,17 @@ class WikiWidget extends WP_Widget {
 	function form( $instance ) {
 		global $wiki;
 
-		$instance = wp_parse_args( (array) $instance, array( 'title'        => __( 'Wiki', 'wiki' ),
-		                                                     'hierarchical' => 'yes',
-		                                                     'order_by'     => $wiki->get_setting( 'sub_wiki_order_by' ),
-		                                                     'order'        => $wiki->get_setting( 'sub_wiki_order' )
+		$instance = wp_parse_args( (array) $instance, array(
+			'title'        => __( 'Wiki', 'wiki' ),
+			'hierarchical' => 'yes',
+			'order_by'     => $wiki->get_setting( 'sub_wiki_order_by' ),
+			'order'        => $wiki->get_setting( 'sub_wiki_order' )
 		) );
-		$options  = array( 'title'        => strip_tags( $instance['title'] ),
-		                   'hierarchical' => $instance['hierarchical'],
-		                   'order_by'     => $instance['order_by'],
-		                   'order'        => $instance['order']
+		$options  = array(
+			'title'        => strip_tags( $instance['title'] ),
+			'hierarchical' => $instance['hierarchical'],
+			'order_by'     => $instance['order_by'],
+			'order'        => $instance['order']
 		);
 
 		if ( $options['hierarchical'] == 'yes' ) {
@@ -129,13 +133,18 @@ class WikiWidget extends WP_Widget {
 		}
 		?>
 		<div style="text-align:left">
-			<label for="<?php echo $this->get_field_id( 'title' ); ?>" style="line-height:35px;display:block;"><?php _e( 'Title', 'wiki' ); ?>
+			<label for="<?php echo $this->get_field_id( 'title' ); ?>"
+			       style="line-height:35px;display:block;"><?php _e( 'Title', 'wiki' ); ?>
 				:<br/>
-				<input class="widefat" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" value="<?php echo $options['title']; ?>" type="text" style="width:95%;"/>
+				<input class="widefat" id="<?php echo $this->get_field_id( 'title' ); ?>"
+				       name="<?php echo $this->get_field_name( 'title' ); ?>" value="<?php echo $options['title']; ?>"
+				       type="text" style="width:95%;"/>
 			</label>
-			<label for="<?php echo $this->get_field_id( 'hierarchical' ); ?>" style="line-height:35px;display:block;"><?php _e( 'Levels', 'wiki' ); ?>
+			<label for="<?php echo $this->get_field_id( 'hierarchical' ); ?>"
+			       style="line-height:35px;display:block;"><?php _e( 'Levels', 'wiki' ); ?>
 				:<br/>
-				<select id="<?php echo $this->get_field_id( 'hierarchical' ); ?>" name="<?php echo $this->get_field_name( 'hierarchical' ); ?>">
+				<select id="<?php echo $this->get_field_id( 'hierarchical' ); ?>"
+				        name="<?php echo $this->get_field_name( 'hierarchical' ); ?>">
 					<?php for ( $i = 1; $i < 5; $i ++ ) { ?>
 						<option value="<?php echo $i; ?>" <?php if ( $options['hierarchical'] == $i ) {
 							echo 'selected="selected"';
@@ -146,9 +155,11 @@ class WikiWidget extends WP_Widget {
 					} ?> ><?php _e( 'Unlimited', 'wiki' ); ?></option>
 				</select>
 			</label>
-			<label for="<?php echo $this->get_field_id( 'order_by' ); ?>" style="line-height:35px;display:block;"><?php _e( 'Order by', 'wiki' ); ?>
+			<label for="<?php echo $this->get_field_id( 'order_by' ); ?>"
+			       style="line-height:35px;display:block;"><?php _e( 'Order by', 'wiki' ); ?>
 				:<br/>
-				<select id="<?php echo $this->get_field_id( 'order_by' ); ?>" name="<?php echo $this->get_field_name( 'order_by' ); ?>">
+				<select id="<?php echo $this->get_field_id( 'order_by' ); ?>"
+				        name="<?php echo $this->get_field_name( 'order_by' ); ?>">
 					<option value="menu_order" <?php if ( $options['order_by'] == 'menu_order' ) {
 						echo 'selected="selected"';
 					} ?> ><?php _e( 'Menu Order/Order Created', 'wiki' ); ?></option>
@@ -160,9 +171,11 @@ class WikiWidget extends WP_Widget {
 					} ?> ><?php _e( 'Random', 'wiki' ); ?></option>
 				</select>
 			</label>
-			<label for="<?php echo $this->get_field_id( 'order' ); ?>" style="line-height:35px;display:block;"><?php _e( 'Order', 'wiki' ); ?>
+			<label for="<?php echo $this->get_field_id( 'order' ); ?>"
+			       style="line-height:35px;display:block;"><?php _e( 'Order', 'wiki' ); ?>
 				:<br/>
-				<select id="<?php echo $this->get_field_id( 'order' ); ?>" name="<?php echo $this->get_field_name( 'order' ); ?>">
+				<select id="<?php echo $this->get_field_id( 'order' ); ?>"
+				        name="<?php echo $this->get_field_name( 'order' ); ?>">
 					<option value="ASC" <?php if ( $options['order'] == 'ASC' ) {
 						echo 'selected="selected"';
 					} ?> ><?php _e( 'Ascending', 'wiki' ); ?></option>

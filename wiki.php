@@ -251,7 +251,7 @@ class Wiki {
 	}
 
 	function load_templates( $template ) {
-		global $wp_query, $post;
+		global $post;
 		if ( is_single() && 'incsub_wiki' == get_post_type() ) {
 			//check for custom theme templates
 			$wiki_name = $post->post_name;
