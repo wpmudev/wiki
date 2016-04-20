@@ -133,9 +133,12 @@ class Wiki_Premium {
 			</th>
 			<td>
 				<select id="incsub_wiki-sub_wiki_order_by" name="wiki[sub_wiki_order_by]">
-					<option value="menu_order" <?php selected( $this->wiki->get_setting( 'sub_wiki_order_by' ), 'menu_order' ); ?>>
-						<?php _e( 'Menu Order/ Order Created', 'wiki' ); ?>
-					</option>
+					<option value="menu_order" <?php selected($this->wiki->get_setting('sub_wiki_order_by'), 'menu_order'); ?>>
+                                            <?php _e('Menu Order', 'wiki'); ?>
+                                        </option>
+                                        <option value="date" <?php selected($this->wiki->get_setting('sub_wiki_order_by'), 'date'); ?>>
+                                            <?php _e('Created Date', 'wiki'); ?>
+                                        </option>
 					<option value="title" <?php selected( $this->wiki->get_setting( 'sub_wiki_order_by' ), 'title' ); ?>>
 						<?php _e( 'Title', 'wiki' ); ?>
 					</option>

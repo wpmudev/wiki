@@ -883,9 +883,8 @@ class Wiki {
 
 				if ( class_exists( 'Wiki_Premium' ) ) {
 					$category_list = get_the_term_list( 0, 'incsub_wiki_category', __( 'Category:', 'wiki' ) . ' <span class="incsub_wiki-category">', ', ', '</span> ' );
-					$tags_list = get_the_term_list( 0, 'incsub_wiki_tag', __( 'Tags:', 'wiki' ) . ' <span class="incsub_wiki-tags">', ', ', '</span> ' );
-
-					$taxonomy .= apply_filters( 'the_terms', $category_list, 'incsub_wiki_category', __( 'Category:', 'wiki' ) . ' <span class="incsub_wiki-category">', ', ', '</span> ' );
+                                        $tags_list = get_the_term_list( 0, 'incsub_wiki_tag', __( 'Tags:', 'wiki' ) . ' <span class="incsub_wiki-tags">', ', ', '</span> ' );
+                                        $taxonomy .= apply_filters('the_terms', $category_list, 'incsub_wiki_category', __( 'Category:', 'wiki' ) . ' <span class="incsub_wiki-category">', ', ', '</span> ' );
 					$taxonomy .= apply_filters('the_terms', $tags_list, 'incsub_wiki_tag', __( 'Tags:', 'wiki' ) . ' <span class="incsub_wiki-tags">', ' ', '</span> ' );
 				}
 
@@ -1985,6 +1984,15 @@ class Wiki {
 				),
 				'public'          => true,
 				'capability_type' => 'wiki',
+                                'capabilities' => array(
+                                        'edit_post' => 'edit_wiki',
+                                        'edit_posts' => 'edit_wikis',
+					'edit_others_posts' => 'edit_other_wikis',
+					'publish_posts' => 'publish_wikis',
+					'read_post' => 'read_wiki',
+					'read_private_posts' => 'read_private_wiki',
+					'delete_post' => 'delete_wiki'
+				),
 				'hierarchical'    => true,
 				'map_meta_cap'    => true,
 				'query_var'       => true,
