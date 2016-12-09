@@ -370,39 +370,12 @@ class Wiki_Premium {
 	 */
 	private function __construct() {
 		$this->wiki = Wiki::get_instance();
-		$this->_init_dash_notices();
 		
 		add_filter('wiki_save_settings', array(&$this, 'save_settings'), 10, 2);
 		add_filter('term_link', array(&$this, 'term_link'), 10, 3);		
 		add_action('add_meta_boxes_incsub_wiki', array(&$this, 'add_meta_boxes'));
 		add_action('wp_insert_post', array(&$this, 'save_wiki_meta'), 10, 2);
 		add_action('widgets_init', array(&$this, 'widgets_init'));
-	}
-	
-	/**
-	 * Initializes WPMU DEV dash notices
-	 *
-	 * @since 1.2.5
-	 * @access private
-	 * @uses $wpmudev_notices
-	 */
-	private function _init_dash_notices() {
-		global $wpmudev_notices;
-		$wpmudev_notices[] = array(
-			'id' => 168,
-			'name' => 'Wiki',
-			'screens' => array(
-				'incsub_wiki_page_incsub_wiki',
-				'edit-incsub_wiki_tag',
-				'edit-incsub_wiki_category',
-				'incsub_wiki',
-				'edit-incsub_wiki',
-			),
-		);
-		
-		if ( file_exists($this->wiki->plugin_dir . 'premium/lib/dash-notice/wpmudev-dash-notification.php') ) {
-			include_once $this->wiki->plugin_dir . 'premium/lib/dash-notice/wpmudev-dash-notification.php';
-		}
 	}
 }
 
