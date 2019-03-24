@@ -4,7 +4,7 @@ class SearchWikisWidget extends WP_Widget {
     function __construct() {
 			$widget_ops = array( 'description' => __('Search Wiki Pages', 'wiki') );
       $control_ops = array( 'title' => __('Search Wikis', 'wiki') );
-			parent::WP_Widget( 'incsub_search_wikis', __('Search Wikis', 'wiki'), $widget_ops, $control_ops );
+			parent::__construct( 'incsub_search_wikis', __('Search Wikis', 'wiki'), $widget_ops, $control_ops );
     }
     
     function widget($args, $instance) {

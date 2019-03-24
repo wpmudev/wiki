@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/wiki
 Description: Add a wiki to your blog
 Author: WPMU DEV
 WDP ID: 168
-Version: 1.2.5.2
+Version: 1.2.5.3
 Author URI: http://premium.wpmudev.org
 Text Domain: wiki
 */
@@ -13,7 +13,7 @@ Text Domain: wiki
 /*
 Copyright 2007-2014 Incsub (http://incsub.com)
 Author - S H Mohanjith
-Contributors - Jonathan Cowher
+Contributors - Jonathan Cowher, Dan Mahavithana
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License (Version 2 - GPLv2) as published by
@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 class Wiki {
 	// @var string Current version
-	var $version = '1.2.5.2';
+	var $version = '1.2.5.3';
 	// @var string The db prefix
 	var $db_prefix = '';
 	// @var string The plugin settings
