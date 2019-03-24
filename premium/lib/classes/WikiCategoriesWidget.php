@@ -5,7 +5,7 @@ class WikiCategoriesWidget extends WP_Widget {
 	$widget_ops = array( 'description' => __('Display Wiki Categories', 'wiki') );
         $control_ops = array( 'title' => __('Wiki Categories', 'wiki'), 'hierarchical' => 'yes' );
         
-	parent::WP_Widget( 'incsub_wiki_categories', __('Wiki Categories', 'wiki'), $widget_ops, $control_ops );
+	parent::__construct( 'incsub_wiki_categories', __('Wiki Categories', 'wiki'), $widget_ops, $control_ops );
     }
     
     function widget($args, $instance) {

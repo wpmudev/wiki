@@ -7,7 +7,7 @@ class WikiWidget extends WP_Widget {
 			$widget_ops = array( 'description' => __('Display Wiki Pages', 'wiki') );
 			$control_ops = array( 'title' => __('Wiki', 'wiki'), 'hierarchical' => 'yes', 'order_by' => $wiki->get_setting('sub_wiki_order_by'), 'order' => $wiki->get_setting('sub_wiki_order'));
 					
-			parent::WP_Widget( 'incsub_wiki', __('Wiki', 'wiki'), $widget_ops, $control_ops );
+			parent::__construct( 'incsub_wiki', __('Wiki', 'wiki'), $widget_ops, $control_ops );
 		}
 		
 		function widget($args, $instance) {

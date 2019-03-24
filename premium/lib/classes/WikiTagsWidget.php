@@ -5,7 +5,7 @@ class WikiTagsWidget extends WP_Widget {
 	$widget_ops = array( 'description' => __('Display Wiki Tags', 'wiki') );
         $control_ops = array( 'title' => __('Wiki Tags', 'wiki'), 'hierarchical' => 'yes' );
         
-	parent::WP_Widget( 'incsub_wiki_tags', __('Wiki Tags', 'wiki'), $widget_ops, $control_ops );
+	parent::__construct( 'incsub_wiki_tags', __('Wiki Tags', 'wiki'), $widget_ops, $control_ops );
     }
     
     function widget($args, $instance) {

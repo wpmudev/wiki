@@ -5,7 +5,7 @@ class PopularWikisWidget extends WP_Widget {
     	global $wiki;
 			$widget_ops = array( 'description' => __('Display Popular Wiki Pages', 'wiki') );
       $control_ops = array( 'title' => __('Popular Wikis', 'wiki'), 'hierarchical' => 'yes' );
-			parent::WP_Widget( 'incsub_popular_wikis', __('Popular Wikis', 'wiki'), $widget_ops, $control_ops );
+			parent::__construct( 'incsub_popular_wikis', __('Popular Wikis', 'wiki'), $widget_ops, $control_ops );
     }
     
     function widget($args, $instance) {

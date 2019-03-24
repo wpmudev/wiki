@@ -7,7 +7,7 @@ class NewWikisWidget extends WP_Widget {
 			$widget_ops = array( 'description' => __('Display New Wiki Pages', 'wiki') );
 			$control_ops = array( 'title' => __('New Wikis', 'wiki'), 'hierarchical' => 'yes' );
 				
-			parent::WP_Widget( 'incsub_new_wikis', __('New Wikis', 'wiki'), $widget_ops, $control_ops );
+			parent::__construct( 'incsub_new_wikis', __('New Wikis', 'wiki'), $widget_ops, $control_ops );
 		}
 		
 		function widget($args, $instance) {
